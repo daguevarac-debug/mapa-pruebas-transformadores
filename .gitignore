@@ -1,6 +1,15 @@
 # Procedimientos y normas
 *.pdf
+*.zip
+project_sources/
 Procedimientos Campo de pruebas/
+
+# Dependencias y build
+node_modules/
+.next/
+
+# Entorno local
+.env*
 
 # Workspace y configuración local
 *.code-workspace
