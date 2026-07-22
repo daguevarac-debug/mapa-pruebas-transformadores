@@ -252,7 +252,7 @@ export default function HomePage() {
               <h2 className="text-xl font-semibold text-[#0d2b45]">Mapa de relaciones</h2>
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-800">
-                  <span className="h-[2px] w-6 bg-amber-700" aria-hidden /> prerequisite
+                  <span className="h-[2px] w-6 bg-amber-700" aria-hidden /> Prerequisito
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-sky-800">
                   <span
@@ -260,7 +260,7 @@ export default function HomePage() {
                     style={{ backgroundImage: "repeating-linear-gradient(to right, #0369a1 0, #0369a1 6px, transparent 6px, transparent 10px)" }}
                     aria-hidden
                   />
-                  data_dependency
+                  Dependencia de datos
                 </span>
               </div>
             </div>
@@ -293,18 +293,33 @@ export default function HomePage() {
                   const connected = selectedRelationKeys.has(relationKey);
                   const faded = selectedRelationKeys.size > 0 && !connected;
 
+                  const dx = target.x - source.x;
+                  const dy = target.y - source.y;
+                  const distance = Math.hypot(dx, dy) || 1;
+                  const ux = dx / distance;
+                  const uy = dy / distance;
+                  const sourceRadius = selectedProcedure.code === relation.from ? 37 : 31;
+                  const targetRadius = selectedProcedure.code === relation.to ? 37 : 31;
+
+                  // Draw edges from node border to node border so arrowheads are never hidden by circles.
+                  const x1 = source.x + ux * (sourceRadius + 2);
+                  const y1 = source.y + uy * (sourceRadius + 2);
+                  const x2 = target.x - ux * (targetRadius + 4);
+                  const y2 = target.y - uy * (targetRadius + 4);
+
                   return (
                     <line
                       key={relationKey}
-                      x1={source.x}
-                      y1={source.y}
-                      x2={target.x}
-                      y2={target.y}
+                      x1={x1}
+                      y1={y1}
+                      x2={x2}
+                      y2={y2}
                       stroke={relationColor(relation.type)}
                       strokeWidth={connected ? 3.2 : 2.3}
                       strokeDasharray={relation.type === "data_dependency" ? "7 6" : undefined}
                       markerEnd={relation.type === "prerequisite" ? "url(#arrow-prerequisite)" : "url(#arrow-data)"}
-                      opacity={faded ? 0.18 : 0.9}
+                      strokeLinecap="round"
+                      opacity={faded ? 0.28 : 0.92}
                     />
                   );
                 })}
