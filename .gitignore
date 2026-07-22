@@ -1,0 +1,13 @@
+# Procedimientos y normas
+*.pdf
+Procedimientos Campo de pruebas/
+
+# Workspace y configuración local
+*.code-workspace
+.vscode/
+
+# Archivos temporales
+.DS_Store
+Thumbs.db
+~$*
+*.tmp
