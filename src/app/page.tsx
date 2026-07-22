@@ -6,8 +6,8 @@ import { procedures, verifiedRelations } from "@/data/pruebas";
 type ViewMode = "explore" | "map";
 
 function typeLabel(type: "prerequisite" | "data_dependency") {
-  if (type === "prerequisite") return "Prerequisite";
-  return "Data dependency";
+  if (type === "prerequisite") return "Prerequisito";
+  return "Dependencia de datos";
 }
 
 function relationColor(type: "prerequisite" | "data_dependency") {
@@ -77,7 +77,7 @@ export default function HomePage() {
     const prerequisiteCount = [...incoming, ...outgoing].filter((relation) => relation.type === "prerequisite").length;
     const dataCount = [...incoming, ...outgoing].filter((relation) => relation.type === "data_dependency").length;
 
-    return `Esta vista muestra ${total} conexion(es) verificadas para ${selectedProcedure.code}: ${outgoing.length} saliente(s), ${incoming.length} entrante(s), ${prerequisiteCount} de tipo prerequisite y ${dataCount} de tipo data_dependency. Usala como apoyo didactico para interpretar dependencias documentadas, no como una secuencia operativa obligatoria.`;
+    return `Esta vista muestra ${total} conexión(es) verificadas para ${selectedProcedure.code}: ${outgoing.length} saliente(s), ${incoming.length} entrante(s), ${prerequisiteCount} de tipo prerequisito y ${dataCount} de tipo dependencia de datos. Úsala como apoyo didáctico para interpretar dependencias documentadas, no como una secuencia operativa obligatoria.`;
   }, [incoming, outgoing, selectedProcedure.code]);
 
   return (
