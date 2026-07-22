@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { procedures, verifiedRelations } from "@/data/pruebas";
+import { documentedSpecialConditions, procedures, verifiedRelations } from "@/data/pruebas";
 
 type ViewMode = "explore" | "map";
 
@@ -14,11 +14,6 @@ function relationColor(type: "prerequisite" | "data_dependency") {
   if (type === "prerequisite") return "#b45309";
   return "#0369a1";
 }
-
-const documentedSpecialConditions: Record<string, string> = {
-  "T50-02417":
-    "Puede requerirse desmagnetizacion del nucleo antes de la prueba, en especial si previamente se realizaron mediciones de resistencia de devanados o ensayos de impulso, porque esas actividades pueden dejar el nucleo magnetizado."
-};
 
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("explore");
@@ -85,7 +80,7 @@ export default function HomePage() {
     return `Esta vista muestra ${total} conexión(es) verificadas para ${selectedProcedure.code}: ${outgoing.length} saliente(s), ${incoming.length} entrante(s), ${prerequisiteCount} de tipo prerequisito y ${dataCount} de tipo dependencia de datos. Úsala como apoyo didáctico para interpretar dependencias documentadas, no como una secuencia operativa obligatoria.`;
   }, [incoming, outgoing, selectedProcedure.code]);
 
-  const selectedSpecialCondition = documentedSpecialConditions[selectedProcedure.code];
+  const selectedSpecialConditions = documentedSpecialConditions[selectedProcedure.code] ?? [];
 
   return (
     <main className="study-shell mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-8 md:px-8">
@@ -174,15 +169,22 @@ export default function HomePage() {
             </div>
 
             <div className="mt-5 space-y-5">
-              {selectedSpecialCondition && (
+              {selectedSpecialConditions.length > 0 && (
                 <section>
                   <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Condiciones especiales</h4>
-                  <article className="mt-2 rounded-lg border border-amber-200 bg-amber-50/80 p-3">
-                    <p className="text-sm text-slate-800">{selectedSpecialCondition}</p>
-                    <p className="mt-2 text-sm font-medium text-amber-900">
-                      Esta condición orienta el estudio del procedimiento; no define por sí sola una secuencia operativa obligatoria.
-                    </p>
-                  </article>
+                  <div className="mt-2 space-y-2">
+                    {selectedSpecialConditions.map((specialCondition, index) => (
+                      <article
+                        key={`${selectedProcedure.code}-special-${index}`}
+                        className="rounded-lg border border-amber-200 bg-amber-50/80 p-3"
+                      >
+                        <p className="text-sm text-slate-800">{specialCondition.summary}</p>
+                        <p className="mt-2 text-sm font-medium text-amber-900">
+                          Esta condición orienta el estudio del procedimiento; no define por sí sola una secuencia operativa obligatoria.
+                        </p>
+                      </article>
+                    ))}
+                  </div>
                 </section>
               )}
 
@@ -388,15 +390,22 @@ export default function HomePage() {
               {selectedNarrative}
             </p>
 
-            {selectedSpecialCondition && (
+            {selectedSpecialConditions.length > 0 && (
               <section className="mt-4">
                 <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Condiciones especiales</h4>
-                <article className="mt-2 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-3">
-                  <p className="text-sm text-slate-800">{selectedSpecialCondition}</p>
-                  <p className="mt-2 text-sm font-medium text-amber-900">
-                    Esta condición orienta el estudio del procedimiento; no define por sí sola una secuencia operativa obligatoria.
-                  </p>
-                </article>
+                <div className="mt-2 space-y-2">
+                  {selectedSpecialConditions.map((specialCondition, index) => (
+                    <article
+                      key={`${selectedProcedure.code}-map-special-${index}`}
+                      className="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-3"
+                    >
+                      <p className="text-sm text-slate-800">{specialCondition.summary}</p>
+                      <p className="mt-2 text-sm font-medium text-amber-900">
+                        Esta condición orienta el estudio del procedimiento; no define por sí sola una secuencia operativa obligatoria.
+                      </p>
+                    </article>
+                  ))}
+                </div>
               </section>
             )}
 

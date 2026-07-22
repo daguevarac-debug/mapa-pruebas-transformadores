@@ -16,6 +16,10 @@ export interface ProcedureRelation {
   transferredData?: string;
 }
 
+export interface DocumentedSpecialCondition {
+  summary: string;
+}
+
 export const procedures: Procedure[] = [
   {
     code: "T50-02386",
@@ -145,6 +149,17 @@ export const verifiedRelations: ProcedureRelation[] = [
       "Solo cuando esos ensayos de impulso formen parte del programa de pruebas de la unidad."
   }
 ];
+
+export type SpecialConditionsByProcedure = Partial<Record<Procedure["code"], DocumentedSpecialCondition[]>>;
+
+export const documentedSpecialConditions: SpecialConditionsByProcedure = {
+  "T50-02417": [
+    {
+      summary:
+        "Puede requerirse desmagnetización del núcleo antes de la prueba, en especial si previamente se realizaron mediciones de resistencia de devanados o ensayos de impulso, porque esas actividades pueden dejar el núcleo magnetizado."
+    }
+  ]
+};
 
 // Pendiente para etapas futuras del proyecto:
 // 1) Condiciones especiales de preparacion (ej. desmagnetizacion previa para T50-02417).
