@@ -15,6 +15,11 @@ function relationColor(type: "prerequisite" | "data_dependency") {
   return "#0369a1";
 }
 
+const documentedSpecialConditions: Record<string, string> = {
+  "T50-02417":
+    "Puede requerirse desmagnetizacion del nucleo antes de la prueba, en especial si previamente se realizaron mediciones de resistencia de devanados o ensayos de impulso, porque esas actividades pueden dejar el nucleo magnetizado."
+};
+
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("explore");
   const [selectedCode, setSelectedCode] = useState<string>(procedures[0]?.code ?? "");
@@ -79,6 +84,8 @@ export default function HomePage() {
 
     return `Esta vista muestra ${total} conexión(es) verificadas para ${selectedProcedure.code}: ${outgoing.length} saliente(s), ${incoming.length} entrante(s), ${prerequisiteCount} de tipo prerequisito y ${dataCount} de tipo dependencia de datos. Úsala como apoyo didáctico para interpretar dependencias documentadas, no como una secuencia operativa obligatoria.`;
   }, [incoming, outgoing, selectedProcedure.code]);
+
+  const selectedSpecialCondition = documentedSpecialConditions[selectedProcedure.code];
 
   return (
     <main className="study-shell mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-8 md:px-8">
@@ -167,6 +174,18 @@ export default function HomePage() {
             </div>
 
             <div className="mt-5 space-y-5">
+              {selectedSpecialCondition && (
+                <section>
+                  <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Condiciones especiales</h4>
+                  <article className="mt-2 rounded-lg border border-amber-200 bg-amber-50/80 p-3">
+                    <p className="text-sm text-slate-800">{selectedSpecialCondition}</p>
+                    <p className="mt-2 text-sm font-medium text-amber-900">
+                      Esta condición orienta el estudio del procedimiento; no define por sí sola una secuencia operativa obligatoria.
+                    </p>
+                  </article>
+                </section>
+              )}
+
               <section>
                 <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Relaciones salientes</h4>
                 <div className="mt-2 space-y-2">
@@ -368,6 +387,18 @@ export default function HomePage() {
             <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
               {selectedNarrative}
             </p>
+
+            {selectedSpecialCondition && (
+              <section className="mt-4">
+                <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Condiciones especiales</h4>
+                <article className="mt-2 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-3">
+                  <p className="text-sm text-slate-800">{selectedSpecialCondition}</p>
+                  <p className="mt-2 text-sm font-medium text-amber-900">
+                    Esta condición orienta el estudio del procedimiento; no define por sí sola una secuencia operativa obligatoria.
+                  </p>
+                </article>
+              </section>
+            )}
 
             <div className="mt-4 space-y-3">
               <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Conexiones visibles</h4>
