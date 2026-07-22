@@ -97,6 +97,36 @@ export default function HomePage() {
         </p>
       </header>
 
+      <section className="mt-4 rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
+        <h2 className="text-lg font-semibold text-[#0d2b45]">Cómo leer este mapa</h2>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <article className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3">
+            <p className="text-sm font-semibold text-slate-900">Flecha</p>
+            <p className="mt-1 text-sm text-slate-700">
+              Indica una relación documentada entre una prueba de origen y una prueba de destino.
+            </p>
+          </article>
+
+          <article className="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-3">
+            <p className="text-sm font-semibold text-amber-900">Prerequisito</p>
+            <p className="mt-1 text-sm text-slate-700">
+              Señala una prueba o resultado que el procedimiento de destino requiere considerar antes de una etapa determinada.
+            </p>
+          </article>
+
+          <article className="rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-3">
+            <p className="text-sm font-semibold text-sky-900">Dependencia de datos</p>
+            <p className="mt-1 text-sm text-slate-700">
+              Señala que un dato medido en una prueba se utiliza en el cálculo o la interpretación de otra.
+            </p>
+          </article>
+        </div>
+
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-slate-800">
+          Las condiciones especiales son avisos de estudio; no son flechas ni definen por sí solas una secuencia operativa obligatoria.
+        </p>
+      </section>
+
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white/85 p-2 shadow-sm backdrop-blur">
         <div className="grid grid-cols-2 gap-2">
           <button
