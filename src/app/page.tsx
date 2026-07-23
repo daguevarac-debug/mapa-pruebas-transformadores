@@ -229,6 +229,28 @@ export default function HomePage() {
             </div>
 
             <div className="mt-5 space-y-5">
+              {selectedProcedure.didacticSummary && (
+                <section aria-labelledby="ensayo-en-una-mirada">
+                  <h4 id="ensayo-en-una-mirada" className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">
+                    El ensayo, en una mirada
+                  </h4>
+                  <div className="mt-2 space-y-2">
+                    <article className="rounded-lg border border-teal-200 bg-teal-50/70 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-teal-800">1. Se aplica o conecta</p>
+                      <p className="mt-1 text-sm text-slate-800">{selectedProcedure.didacticSummary.apply}</p>
+                    </article>
+                    <article className="rounded-lg border border-sky-200 bg-sky-50/70 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-sky-800">2. Se mide o registra</p>
+                      <p className="mt-1 text-sm text-slate-800">{selectedProcedure.didacticSummary.measure}</p>
+                    </article>
+                    <article className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-emerald-800">3. Se obtiene o interpreta</p>
+                      <p className="mt-1 text-sm text-slate-800">{selectedProcedure.didacticSummary.obtain}</p>
+                    </article>
+                  </div>
+                </section>
+              )}
+
               {selectedSpecialConditions.length > 0 && (
                 <section>
                   <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Condiciones especiales</h4>
