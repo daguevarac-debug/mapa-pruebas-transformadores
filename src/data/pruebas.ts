@@ -1,9 +1,11 @@
 export type RelationType = "prerequisite" | "data_dependency";
+export type StudyStatus = "studied" | "in_progress" | "pending";
 
 export interface Procedure {
   code: string;
   name: string;
   category?: string;
+  studyStatus: StudyStatus;
 }
 
 export interface ProcedureRelation {
@@ -24,52 +26,104 @@ export const procedures: Procedure[] = [
   {
     code: "T50-02386",
     name: "Resistencia de devanados",
-    category: "Medida de resistencia electrica"
+    category: "Medida de resistencia electrica",
+    studyStatus: "studied"
   },
   {
     code: "T50-02413",
     name: "TTR, grupo vectorial y polaridad",
-    category: "Medida de relacion de transformacion y verificacion de conexion"
+    category: "Medida de relacion de transformacion y verificacion de conexion",
+    studyStatus: "studied"
   },
   {
     code: "T50-02417",
     name: "Perdidas en vacio y corriente de excitacion",
-    category: "Medida de perdidas en vacio y corriente de excitacion"
+    category: "Medida de perdidas en vacio y corriente de excitacion",
+    studyStatus: "studied"
   },
   {
     code: "T50-02404",
     name: "Perdidas con carga e impedancia",
-    category: "Medida de perdidas con carga e impedancia de cortocircuito"
+    category: "Medida de perdidas con carga e impedancia de cortocircuito",
+    studyStatus: "studied"
   },
   {
     code: "T50-02416",
     name: "Resistencia de aislamiento",
-    category: "Medida de resistencia de aislamiento"
+    category: "Medida de resistencia de aislamiento",
+    studyStatus: "studied"
   },
   {
     code: "T50-02398",
     name: "Tangente delta, factor de potencia y capacitancia",
-    category: "Medida de perdidas dielectricas y capacitancia del aislamiento"
+    category: "Medida de perdidas dielectricas y capacitancia del aislamiento",
+    studyStatus: "studied"
   },
   {
     code: "T50-02367",
     name: "Calentamiento",
-    category: "Prueba de elevacion de temperatura"
+    category: "Prueba de elevacion de temperatura",
+    studyStatus: "studied"
   },
   {
     code: "T50-02393",
     name: "Tension aplicada",
-    category: "Prueba dielectrica de tension aplicada"
+    category: "Prueba dielectrica de tension aplicada",
+    studyStatus: "in_progress"
   },
   {
     code: "T50-02376",
     name: "Tension inducida",
-    category: "Prueba dielectrica de tension inducida"
+    category: "Prueba dielectrica de tension inducida",
+    studyStatus: "pending"
   },
   {
     code: "T50-02408",
     name: "Impulso",
-    category: "Prueba dielectrica de impulso"
+    category: "Prueba dielectrica de impulso",
+    studyStatus: "studied"
+  },
+  {
+    code: "T50-02338",
+    name: "Nivel de ruido audible",
+    category: "Prueba de nivel de ruido audible",
+    studyStatus: "pending"
+  },
+  {
+    code: "T50-02407",
+    name: "Corrientes de excitacion monofasica",
+    category: "Medicion de corrientes de excitacion monofasica",
+    studyStatus: "pending"
+  },
+  {
+    code: "T50-02692",
+    name: "SFRA",
+    category: "Analisis de respuesta en frecuencia de barrido",
+    studyStatus: "pending"
+  },
+  {
+    code: "T50-02869",
+    name: "Impedancia de secuencia cero",
+    category: "Medida de la impedancia de secuencia cero",
+    studyStatus: "pending"
+  },
+  {
+    code: "T50-04588",
+    name: "Armonicos de corriente",
+    category: "Medida de armonicos de corriente",
+    studyStatus: "pending"
+  },
+  {
+    code: "T50-04590",
+    name: "Ensayos electricos en transformadores de corriente",
+    category: "Ensayos electricos en transformadores de corriente",
+    studyStatus: "pending"
+  },
+  {
+    code: "T50-04598",
+    name: "DFR",
+    category: "Ensayo de respuesta en frecuencia del dielectrico",
+    studyStatus: "pending"
   }
 ];
 
