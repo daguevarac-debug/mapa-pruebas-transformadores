@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { documentedSpecialConditions, procedures, verifiedRelations } from "@/data/pruebas";
+import { documentedSpecialConditions, procedures, StudyStatus, verifiedRelations } from "@/data/pruebas";
 
 type ViewMode = "explore" | "map";
 
@@ -13,6 +13,24 @@ function typeLabel(type: "prerequisite" | "data_dependency") {
 function relationColor(type: "prerequisite" | "data_dependency") {
   if (type === "prerequisite") return "#b45309";
   return "#0369a1";
+}
+
+function studyStatusLabel(status: StudyStatus) {
+  if (status === "studied") return "Estudiada";
+  if (status === "in_progress") return "En curso";
+  return "Pendiente";
+}
+
+function studyStatusClassName(status: StudyStatus) {
+  if (status === "studied") return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  if (status === "in_progress") return "border-amber-200 bg-amber-50 text-amber-900";
+  return "border-slate-200 bg-slate-50 text-slate-600";
+}
+
+function studyStatusColor(status: StudyStatus) {
+  if (status === "studied") return "#059669";
+  if (status === "in_progress") return "#d97706";
+  return "#94a3b8";
 }
 
 export default function HomePage() {
@@ -125,6 +143,9 @@ export default function HomePage() {
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-slate-800">
           Las condiciones especiales son avisos de estudio; no son flechas ni definen por sí solas una secuencia operativa obligatoria.
         </p>
+        <p className="mt-3 text-sm text-slate-600">
+          El estado de lectura indica el avance personal del estudio. Las pruebas pendientes aparecen en el catálogo sin relaciones ni explicaciones técnicas hasta revisar su procedimiento.
+        </p>
       </section>
 
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white/85 p-2 shadow-sm backdrop-blur">
@@ -159,7 +180,10 @@ export default function HomePage() {
       {viewMode === "explore" && (
         <section className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
           <div className="rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
-            <h2 className="px-2 text-xl font-semibold text-[#0d2b45]">Pruebas documentadas</h2>
+            <div className="flex flex-wrap items-baseline justify-between gap-2 px-2">
+              <h2 className="text-xl font-semibold text-[#0d2b45]">Catálogo de procedimientos</h2>
+              <p className="text-sm text-slate-600">{procedures.length} procedimientos</p>
+            </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {procedures.map((procedure, index) => {
                 const isActive = selectedProcedure.code === procedure.code;
@@ -177,6 +201,9 @@ export default function HomePage() {
                   >
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-teal-700">{procedure.code}</p>
                     <h3 className="mt-1 text-base font-semibold leading-tight text-slate-900">{procedure.name}</h3>
+                    <span className={`mt-2 inline-flex rounded-full border px-2 py-1 text-xs font-medium ${studyStatusClassName(procedure.studyStatus)}`}>
+                      {studyStatusLabel(procedure.studyStatus)}
+                    </span>
                     {procedure.category ? (
                       <p className="mt-2 text-sm text-slate-600">{procedure.category}</p>
                     ) : (
@@ -193,6 +220,9 @@ export default function HomePage() {
             <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-teal-700">{selectedProcedure.code}</p>
               <h3 className="mt-1 text-lg font-semibold text-slate-900">{selectedProcedure.name}</h3>
+              <span className={`mt-2 inline-flex rounded-full border px-2 py-1 text-xs font-medium ${studyStatusClassName(selectedProcedure.studyStatus)}`}>
+                {studyStatusLabel(selectedProcedure.studyStatus)}
+              </span>
               {selectedProcedure.category && (
                 <p className="mt-1 text-sm text-slate-600">{selectedProcedure.category}</p>
               )}
@@ -387,7 +417,7 @@ export default function HomePage() {
                       <circle
                         r={isSelected ? 37 : 31}
                         fill={isSelected ? "#dbeafe" : "#ffffff"}
-                        stroke={isSelected ? "#0284c7" : "#94a3b8"}
+                        stroke={isSelected ? "#0284c7" : studyStatusColor(node.studyStatus)}
                         strokeWidth={isSelected ? 3 : 2}
                       />
                       <text
@@ -411,6 +441,9 @@ export default function HomePage() {
             <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-teal-700">{selectedProcedure.code}</p>
               <p className="mt-1 text-base font-semibold text-slate-900">{selectedProcedure.name}</p>
+              <span className={`mt-2 inline-flex rounded-full border px-2 py-1 text-xs font-medium ${studyStatusClassName(selectedProcedure.studyStatus)}`}>
+                {studyStatusLabel(selectedProcedure.studyStatus)}
+              </span>
               {selectedProcedure.category && (
                 <p className="mt-1 text-sm text-slate-600">{selectedProcedure.category}</p>
               )}
