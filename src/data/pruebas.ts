@@ -69,7 +69,7 @@ export const procedures: Procedure[] = [
     code: "T50-02393",
     name: "Tension aplicada",
     category: "Prueba dielectrica de tension aplicada",
-    studyStatus: "in_progress"
+    studyStatus: "studied"
   },
   {
     code: "T50-02376",
@@ -123,7 +123,7 @@ export const procedures: Procedure[] = [
     code: "T50-04598",
     name: "DFR",
     category: "Ensayo de respuesta en frecuencia del dielectrico",
-    studyStatus: "pending"
+    studyStatus: "studied"
   }
 ];
 
