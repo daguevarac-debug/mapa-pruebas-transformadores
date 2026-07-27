@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { documentedSpecialConditions, procedures, StudyStatus, verifiedRelations } from "@/data/pruebas";
 
 type ViewMode = "explore" | "map";
+type RelationFocus = "none" | "outgoing" | "incoming";
 
 function typeLabel(type: "prerequisite" | "data_dependency") {
   if (type === "prerequisite") return "Prerequisito";
@@ -36,6 +37,7 @@ function studyStatusColor(status: StudyStatus) {
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("explore");
   const [selectedCode, setSelectedCode] = useState<string>(procedures[0]?.code ?? "");
+  const [relationFocus, setRelationFocus] = useState<RelationFocus>("none");
 
   const svgWidth = 1000;
   const svgHeight = 660;
@@ -95,6 +97,25 @@ export default function HomePage() {
     () => new Set(incoming.map((relation) => relation.from)),
     [incoming]
   );
+
+  const focusedRelationKeys = useMemo(
+    () =>
+      new Set(
+        (relationFocus === "outgoing" ? outgoing : relationFocus === "incoming" ? incoming : []).map(
+          (relation) => `${relation.from}-${relation.to}`
+        )
+      ),
+    [incoming, outgoing, relationFocus]
+  );
+
+  const focusDirection = (direction: Exclude<RelationFocus, "none">) => {
+    setRelationFocus((currentFocus) => (currentFocus === direction ? "none" : direction));
+  };
+
+  const selectProcedure = (code: string) => {
+    setSelectedCode(code);
+    setRelationFocus("none");
+  };
 
   const selectedNarrative = useMemo(() => {
     if (incoming.length === 0 && outgoing.length === 0) {
@@ -197,8 +218,8 @@ export default function HomePage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {procedures.map((procedure, index) => {
                 const isActive = selectedProcedure.code === procedure.code;
-                const isOutgoingTarget = outgoingCodes.has(procedure.code);
-                const isIncomingSource = incomingCodes.has(procedure.code);
+                const isOutgoingTarget = relationFocus === "outgoing" && outgoingCodes.has(procedure.code);
+                const isIncomingSource = relationFocus === "incoming" && incomingCodes.has(procedure.code);
                 const isBidirectional = isOutgoingTarget && isIncomingSource;
                 const relationHighlightClass = isActive
                   ? "border-sky-300 bg-sky-50 shadow"
@@ -213,7 +234,7 @@ export default function HomePage() {
                   <button
                     key={procedure.code}
                     type="button"
-                    onClick={() => setSelectedCode(procedure.code)}
+                    onClick={() => selectProcedure(procedure.code)}
                     className={`rounded-xl border px-4 py-4 text-left transition ${relationHighlightClass}`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
@@ -299,7 +320,18 @@ export default function HomePage() {
               )}
 
               <section>
-                <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Relaciones salientes</h4>
+                <button
+                  type="button"
+                  onClick={() => focusDirection("outgoing")}
+                  aria-pressed={relationFocus === "outgoing"}
+                  className={`rounded-md px-2 py-1 text-left text-sm font-semibold uppercase tracking-[0.08em] transition ${
+                    relationFocus === "outgoing"
+                      ? "bg-emerald-100 text-emerald-900"
+                      : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-900"
+                  }`}
+                >
+                  Relaciones salientes
+                </button>
                 <div className="mt-2 space-y-2">
                   {outgoing.length === 0 && (
                     <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
@@ -336,7 +368,18 @@ export default function HomePage() {
               </section>
 
               <section>
-                <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Relaciones entrantes</h4>
+                <button
+                  type="button"
+                  onClick={() => focusDirection("incoming")}
+                  aria-pressed={relationFocus === "incoming"}
+                  className={`rounded-md px-2 py-1 text-left text-sm font-semibold uppercase tracking-[0.08em] transition ${
+                    relationFocus === "incoming"
+                      ? "bg-orange-100 text-orange-900"
+                      : "text-slate-600 hover:bg-orange-50 hover:text-orange-900"
+                  }`}
+                >
+                  Relaciones entrantes
+                </button>
                 <div className="mt-2 space-y-2">
                   {incoming.length === 0 && (
                     <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
@@ -403,7 +446,7 @@ export default function HomePage() {
             </div>
 
             <p className="mt-3 px-1 text-sm text-slate-600">
-              Selecciona una prueba: sus relaciones salientes se resaltan en verde y las entrantes en naranja.
+              Selecciona una prueba y luego elige relaciones salientes o entrantes en el panel lateral para resaltar esa dirección.
             </p>
 
             <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/70 p-3">
@@ -437,18 +480,19 @@ export default function HomePage() {
                   }
 
                   const relationKey = `${relation.from}-${relation.to}`;
-                  const isOutgoing = relation.from === selectedProcedure.code;
-                  const isIncoming = relation.to === selectedProcedure.code;
-                  const connected = isOutgoing || isIncoming;
-                  const faded = selectedRelationKeys.size > 0 && !connected;
-                  const directionColor = isOutgoing ? "#16a34a" : isIncoming ? "#ea580c" : relationColor(relation.type);
-                  const markerEnd = isOutgoing
-                    ? "url(#arrow-outgoing)"
-                    : isIncoming
-                      ? "url(#arrow-incoming)"
-                      : relation.type === "prerequisite"
-                        ? "url(#arrow-prerequisite)"
-                        : "url(#arrow-data)";
+                  const isFocused = focusedRelationKeys.has(relationKey);
+                  const directionColor = isFocused
+                    ? relationFocus === "outgoing"
+                      ? "#16a34a"
+                      : "#ea580c"
+                    : relationColor(relation.type);
+                  const markerEnd = isFocused
+                    ? relationFocus === "outgoing"
+                      ? "url(#arrow-outgoing)"
+                      : "url(#arrow-incoming)"
+                    : relation.type === "prerequisite"
+                      ? "url(#arrow-prerequisite)"
+                      : "url(#arrow-data)";
 
                   const dx = target.x - source.x;
                   const dy = target.y - source.y;
@@ -472,11 +516,11 @@ export default function HomePage() {
                       x2={x2}
                       y2={y2}
                       stroke={directionColor}
-                      strokeWidth={connected ? 3.6 : 2.3}
+                      strokeWidth={isFocused ? 3.6 : 2.3}
                       strokeDasharray={relation.type === "data_dependency" ? "7 6" : undefined}
                       markerEnd={markerEnd}
                       strokeLinecap="round"
-                      opacity={faded ? 0.2 : 0.94}
+                      opacity={relationFocus !== "none" && !isFocused ? 0.2 : 0.94}
                     />
                   );
                 })}
@@ -508,7 +552,7 @@ export default function HomePage() {
                     <g
                       key={node.code}
                       transform={`translate(${node.x}, ${node.y})`}
-                      onClick={() => setSelectedCode(node.code)}
+                      onClick={() => selectProcedure(node.code)}
                       style={{ cursor: "pointer" }}
                     >
                       <circle
@@ -571,6 +615,32 @@ export default function HomePage() {
 
             <div className="mt-4 space-y-3">
               <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Conexiones visibles</h4>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => focusDirection("outgoing")}
+                  aria-pressed={relationFocus === "outgoing"}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    relationFocus === "outgoing"
+                      ? "bg-emerald-600 text-white"
+                      : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                  }`}
+                >
+                  Relaciones salientes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => focusDirection("incoming")}
+                  aria-pressed={relationFocus === "incoming"}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    relationFocus === "incoming"
+                      ? "bg-orange-600 text-white"
+                      : "border border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100"
+                  }`}
+                >
+                  Relaciones entrantes
+                </button>
+              </div>
               {selectedRelationKeys.size === 0 && (
                 <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
                   Esta prueba no tiene enlaces entrantes o salientes verificados en el conjunto actual.
