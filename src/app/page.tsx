@@ -86,6 +86,16 @@ export default function HomePage() {
     [selectedProcedure.code]
   );
 
+  const outgoingCodes = useMemo(
+    () => new Set(outgoing.map((relation) => relation.to)),
+    [outgoing]
+  );
+
+  const incomingCodes = useMemo(
+    () => new Set(incoming.map((relation) => relation.from)),
+    [incoming]
+  );
+
   const selectedNarrative = useMemo(() => {
     if (incoming.length === 0 && outgoing.length === 0) {
       return "Esta prueba no muestra relaciones verificadas directas en la matriz actual; puede estudiarse como referencia individual dentro del mapa.";
@@ -365,8 +375,18 @@ export default function HomePage() {
                   />
                   Dependencia de datos
                 </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-800">
+                  <span className="h-[2px] w-6 bg-emerald-600" aria-hidden /> Saliente
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-2 py-1 text-red-800">
+                  <span className="h-[2px] w-6 bg-red-600" aria-hidden /> Entrante
+                </span>
               </div>
             </div>
+
+            <p className="mt-3 px-1 text-sm text-slate-600">
+              Selecciona una prueba: sus relaciones salientes se resaltan en verde y las entrantes en rojo.
+            </p>
 
             <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/70 p-3">
               <svg
@@ -382,6 +402,12 @@ export default function HomePage() {
                   <marker id="arrow-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                     <path d="M 0 0 L 10 5 L 0 10 z" fill="#0369a1" />
                   </marker>
+                  <marker id="arrow-outgoing" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a" />
+                  </marker>
+                  <marker id="arrow-incoming" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626" />
+                  </marker>
                 </defs>
 
                 {verifiedRelations.map((relation) => {
@@ -393,8 +419,18 @@ export default function HomePage() {
                   }
 
                   const relationKey = `${relation.from}-${relation.to}`;
-                  const connected = selectedRelationKeys.has(relationKey);
+                  const isOutgoing = relation.from === selectedProcedure.code;
+                  const isIncoming = relation.to === selectedProcedure.code;
+                  const connected = isOutgoing || isIncoming;
                   const faded = selectedRelationKeys.size > 0 && !connected;
+                  const directionColor = isOutgoing ? "#16a34a" : isIncoming ? "#dc2626" : relationColor(relation.type);
+                  const markerEnd = isOutgoing
+                    ? "url(#arrow-outgoing)"
+                    : isIncoming
+                      ? "url(#arrow-incoming)"
+                      : relation.type === "prerequisite"
+                        ? "url(#arrow-prerequisite)"
+                        : "url(#arrow-data)";
 
                   const dx = target.x - source.x;
                   const dy = target.y - source.y;
@@ -417,18 +453,39 @@ export default function HomePage() {
                       y1={y1}
                       x2={x2}
                       y2={y2}
-                      stroke={relationColor(relation.type)}
-                      strokeWidth={connected ? 3.2 : 2.3}
+                      stroke={directionColor}
+                      strokeWidth={connected ? 3.6 : 2.3}
                       strokeDasharray={relation.type === "data_dependency" ? "7 6" : undefined}
-                      markerEnd={relation.type === "prerequisite" ? "url(#arrow-prerequisite)" : "url(#arrow-data)"}
+                      markerEnd={markerEnd}
                       strokeLinecap="round"
-                      opacity={faded ? 0.28 : 0.92}
+                      opacity={faded ? 0.2 : 0.94}
                     />
                   );
                 })}
 
                 {nodes.map((node) => {
                   const isSelected = node.code === selectedProcedure.code;
+                  const isOutgoingTarget = outgoingCodes.has(node.code);
+                  const isIncomingSource = incomingCodes.has(node.code);
+                  const isBidirectional = isOutgoingTarget && isIncomingSource;
+                  const nodeFill = isSelected
+                    ? "#dbeafe"
+                    : isBidirectional
+                      ? "#f3e8ff"
+                      : isOutgoingTarget
+                        ? "#dcfce7"
+                        : isIncomingSource
+                          ? "#fee2e2"
+                          : "#ffffff";
+                  const nodeStroke = isSelected
+                    ? "#0284c7"
+                    : isBidirectional
+                      ? "#9333ea"
+                      : isOutgoingTarget
+                        ? "#16a34a"
+                        : isIncomingSource
+                          ? "#dc2626"
+                          : studyStatusColor(node.studyStatus);
                   return (
                     <g
                       key={node.code}
@@ -438,8 +495,8 @@ export default function HomePage() {
                     >
                       <circle
                         r={isSelected ? 37 : 31}
-                        fill={isSelected ? "#dbeafe" : "#ffffff"}
-                        stroke={isSelected ? "#0284c7" : studyStatusColor(node.studyStatus)}
+                        fill={nodeFill}
+                        stroke={nodeStroke}
                         strokeWidth={isSelected ? 3 : 2}
                       />
                       <text
