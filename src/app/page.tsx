@@ -197,16 +197,24 @@ export default function HomePage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {procedures.map((procedure, index) => {
                 const isActive = selectedProcedure.code === procedure.code;
+                const isOutgoingTarget = outgoingCodes.has(procedure.code);
+                const isIncomingSource = incomingCodes.has(procedure.code);
+                const isBidirectional = isOutgoingTarget && isIncomingSource;
+                const relationHighlightClass = isActive
+                  ? "border-sky-300 bg-sky-50 shadow"
+                  : isBidirectional
+                    ? "border-violet-300 bg-violet-50"
+                    : isOutgoingTarget
+                      ? "border-emerald-300 bg-emerald-50"
+                      : isIncomingSource
+                        ? "border-orange-300 bg-orange-50"
+                        : "border-slate-200 bg-white hover:border-sky-200 hover:bg-slate-50";
                 return (
                   <button
                     key={procedure.code}
                     type="button"
                     onClick={() => setSelectedCode(procedure.code)}
-                    className={`rounded-xl border px-4 py-4 text-left transition ${
-                      isActive
-                        ? "border-sky-300 bg-sky-50 shadow"
-                        : "border-slate-200 bg-white hover:border-sky-200 hover:bg-slate-50"
-                    }`}
+                    className={`rounded-xl border px-4 py-4 text-left transition ${relationHighlightClass}`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-teal-700">{procedure.code}</p>
@@ -214,6 +222,16 @@ export default function HomePage() {
                     <span className={`mt-2 inline-flex rounded-full border px-2 py-1 text-xs font-medium ${studyStatusClassName(procedure.studyStatus)}`}>
                       {studyStatusLabel(procedure.studyStatus)}
                     </span>
+                    {!isActive && isOutgoingTarget && !isIncomingSource && (
+                      <span className="ml-2 inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800">
+                        Saliente
+                      </span>
+                    )}
+                    {!isActive && isIncomingSource && !isOutgoingTarget && (
+                      <span className="ml-2 inline-flex rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
+                        Entrante
+                      </span>
+                    )}
                     {procedure.category ? (
                       <p className="mt-2 text-sm text-slate-600">{procedure.category}</p>
                     ) : (
@@ -378,14 +396,14 @@ export default function HomePage() {
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-800">
                   <span className="h-[2px] w-6 bg-emerald-600" aria-hidden /> Saliente
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-2 py-1 text-red-800">
-                  <span className="h-[2px] w-6 bg-red-600" aria-hidden /> Entrante
+                <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-orange-800">
+                  <span className="h-[2px] w-6 bg-orange-600" aria-hidden /> Entrante
                 </span>
               </div>
             </div>
 
             <p className="mt-3 px-1 text-sm text-slate-600">
-              Selecciona una prueba: sus relaciones salientes se resaltan en verde y las entrantes en rojo.
+              Selecciona una prueba: sus relaciones salientes se resaltan en verde y las entrantes en naranja.
             </p>
 
             <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/70 p-3">
@@ -406,7 +424,7 @@ export default function HomePage() {
                     <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a" />
                   </marker>
                   <marker id="arrow-incoming" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626" />
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c" />
                   </marker>
                 </defs>
 
@@ -423,7 +441,7 @@ export default function HomePage() {
                   const isIncoming = relation.to === selectedProcedure.code;
                   const connected = isOutgoing || isIncoming;
                   const faded = selectedRelationKeys.size > 0 && !connected;
-                  const directionColor = isOutgoing ? "#16a34a" : isIncoming ? "#dc2626" : relationColor(relation.type);
+                  const directionColor = isOutgoing ? "#16a34a" : isIncoming ? "#ea580c" : relationColor(relation.type);
                   const markerEnd = isOutgoing
                     ? "url(#arrow-outgoing)"
                     : isIncoming
@@ -475,7 +493,7 @@ export default function HomePage() {
                       : isOutgoingTarget
                         ? "#dcfce7"
                         : isIncomingSource
-                          ? "#fee2e2"
+                          ? "#ffedd5"
                           : "#ffffff";
                   const nodeStroke = isSelected
                     ? "#0284c7"
@@ -484,7 +502,7 @@ export default function HomePage() {
                       : isOutgoingTarget
                         ? "#16a34a"
                         : isIncomingSource
-                          ? "#dc2626"
+                          ? "#ea580c"
                           : studyStatusColor(node.studyStatus);
                   return (
                     <g
