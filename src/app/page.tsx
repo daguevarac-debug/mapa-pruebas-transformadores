@@ -481,6 +481,9 @@ export default function HomePage() {
 
                   const relationKey = `${relation.from}-${relation.to}`;
                   const isFocused = focusedRelationKeys.has(relationKey);
+                  if (!isFocused) {
+                    return null;
+                  }
                   const directionColor = isFocused
                     ? relationFocus === "outgoing"
                       ? "#16a34a"
@@ -520,15 +523,15 @@ export default function HomePage() {
                       strokeDasharray={relation.type === "data_dependency" ? "7 6" : undefined}
                       markerEnd={markerEnd}
                       strokeLinecap="round"
-                      opacity={relationFocus !== "none" && !isFocused ? 0.2 : 0.94}
+                      opacity={0.94}
                     />
                   );
                 })}
 
                 {nodes.map((node) => {
                   const isSelected = node.code === selectedProcedure.code;
-                  const isOutgoingTarget = outgoingCodes.has(node.code);
-                  const isIncomingSource = incomingCodes.has(node.code);
+                  const isOutgoingTarget = relationFocus === "outgoing" && outgoingCodes.has(node.code);
+                  const isIncomingSource = relationFocus === "incoming" && incomingCodes.has(node.code);
                   const isBidirectional = isOutgoingTarget && isIncomingSource;
                   const nodeFill = isSelected
                     ? "#dbeafe"
