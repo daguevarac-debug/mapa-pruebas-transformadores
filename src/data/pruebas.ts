@@ -163,7 +163,12 @@ export const procedures: Procedure[] = [
     code: "T50-02869",
     name: "Impedancia de secuencia cero",
     category: "Medida de la impedancia de secuencia cero",
-    studyStatus: "pending"
+    studyStatus: "studied",
+    didacticSummary: {
+      apply: "Se cortocircuitan los tres terminales de fase de un devanado en estrella con neutro accesible y se aplica tensión alterna a frecuencia nominal entre ese punto común y el neutro.",
+      measure: "Se registran la tensión de excitación, la corriente total que entra a las tres fases en paralelo y la potencia; las conexiones de los demás devanados dependen de la configuración del transformador.",
+      obtain: "Se calcula la impedancia de secuencia cero Z0, normalmente expresada en porcentaje y referida a una base común, para representar el comportamiento del transformador ante fallas a tierra."
+    }
   },
   {
     code: "T50-04588",
@@ -310,6 +315,12 @@ export const documentedSpecialConditions: SpecialConditionsByProcedure = {
     {
       summary:
         "Cuando se ejecuta la modalidad de tensión inducida con medición de descargas parciales y su nivel de realce alcanza la tensión requerida por la norma aplicable, puede sustituir la prueba de tensión inducida simple. Esta condición depende de la norma y del nivel de tensión especificado para la unidad."
+    }
+  ],
+  "T50-02869": [
+    {
+      summary:
+        "La medición aplica a transformadores trifásicos con al menos un devanado en estrella o zig-zag; el procedimiento de conexión directa requiere que el neutro esté accesible mediante pasatapas. En configuraciones con dos neutros, autotransformadores o devanados interconectados se aplican variantes de medición y cálculo."
     }
   ]
 };
