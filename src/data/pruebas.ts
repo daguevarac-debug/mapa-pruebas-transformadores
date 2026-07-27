@@ -264,6 +264,36 @@ export const verifiedRelations: ProcedureRelation[] = [
       "T50-02393 establece que tension aplicada debe ejecutarse despues de impulso atmosferico y/o maniobra cuando aplican.",
     condition:
       "Solo cuando esos ensayos de impulso formen parte del programa de pruebas de la unidad."
+  },
+  {
+    from: "T50-02416",
+    to: "T50-02408",
+    type: "prerequisite",
+    stage: "preparation",
+    rationale:
+      "El procedimiento de resistencia de aislamiento establece realizar esta medición antes de las pruebas dieléctricas, para confirmar que el transformador es apto para ser sometido a esfuerzo dieléctrico.",
+    condition:
+      "En un transformador totalmente terminado. Para LDT, el procedimiento indica efectuarla antes y después de las pruebas dieléctricas."
+  },
+  {
+    from: "T50-02416",
+    to: "T50-02393",
+    type: "prerequisite",
+    stage: "preparation",
+    rationale:
+      "El procedimiento de resistencia de aislamiento establece realizar esta medición antes de las pruebas dieléctricas, para confirmar que el transformador es apto para ser sometido a esfuerzo dieléctrico.",
+    condition:
+      "En un transformador totalmente terminado. Para LDT, el procedimiento indica efectuarla antes y después de las pruebas dieléctricas."
+  },
+  {
+    from: "T50-02416",
+    to: "T50-02376",
+    type: "prerequisite",
+    stage: "preparation",
+    rationale:
+      "El procedimiento de resistencia de aislamiento establece realizar esta medición antes de las pruebas dieléctricas, para confirmar que el transformador es apto para ser sometido a esfuerzo dieléctrico.",
+    condition:
+      "En un transformador totalmente terminado. Para LDT, el procedimiento indica efectuarla antes y después de las pruebas dieléctricas."
   }
 ];
 
