@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { documentedSpecialConditions, procedures, StudyStatus, verifiedRelations } from "@/data/pruebas";
 
 type ViewMode = "explore" | "map";
-type RelationFocus = "none" | "outgoing" | "incoming";
 
 function typeLabel(type: "prerequisite" | "data_dependency") {
   if (type === "prerequisite") return "Prerequisito";
@@ -37,7 +36,6 @@ function studyStatusColor(status: StudyStatus) {
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("explore");
   const [selectedCode, setSelectedCode] = useState<string>(procedures[0]?.code ?? "");
-  const [relationFocus, setRelationFocus] = useState<RelationFocus>("none");
 
   const svgWidth = 1000;
   const svgHeight = 660;
@@ -98,23 +96,8 @@ export default function HomePage() {
     [incoming]
   );
 
-  const focusedRelationKeys = useMemo(
-    () =>
-      new Set(
-        (relationFocus === "outgoing" ? outgoing : relationFocus === "incoming" ? incoming : []).map(
-          (relation) => `${relation.from}-${relation.to}`
-        )
-      ),
-    [incoming, outgoing, relationFocus]
-  );
-
-  const focusDirection = (direction: Exclude<RelationFocus, "none">) => {
-    setRelationFocus((currentFocus) => (currentFocus === direction ? "none" : direction));
-  };
-
   const selectProcedure = (code: string) => {
     setSelectedCode(code);
-    setRelationFocus("none");
   };
 
   const selectedNarrative = useMemo(() => {
@@ -218,8 +201,8 @@ export default function HomePage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {procedures.map((procedure, index) => {
                 const isActive = selectedProcedure.code === procedure.code;
-                const isOutgoingTarget = relationFocus === "outgoing" && outgoingCodes.has(procedure.code);
-                const isIncomingSource = relationFocus === "incoming" && incomingCodes.has(procedure.code);
+                const isOutgoingTarget = outgoingCodes.has(procedure.code);
+                const isIncomingSource = incomingCodes.has(procedure.code);
                 const isBidirectional = isOutgoingTarget && isIncomingSource;
                 const relationHighlightClass = isActive
                   ? "border-sky-300 bg-sky-50 shadow"
@@ -320,18 +303,7 @@ export default function HomePage() {
               )}
 
               <section>
-                <button
-                  type="button"
-                  onClick={() => focusDirection("outgoing")}
-                  aria-pressed={relationFocus === "outgoing"}
-                  className={`rounded-md px-2 py-1 text-left text-sm font-semibold uppercase tracking-[0.08em] transition ${
-                    relationFocus === "outgoing"
-                      ? "bg-emerald-100 text-emerald-900"
-                      : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-900"
-                  }`}
-                >
-                  Relaciones salientes
-                </button>
+                <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-emerald-800">Relaciones salientes</h4>
                 <div className="mt-2 space-y-2">
                   {outgoing.length === 0 && (
                     <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
@@ -368,18 +340,7 @@ export default function HomePage() {
               </section>
 
               <section>
-                <button
-                  type="button"
-                  onClick={() => focusDirection("incoming")}
-                  aria-pressed={relationFocus === "incoming"}
-                  className={`rounded-md px-2 py-1 text-left text-sm font-semibold uppercase tracking-[0.08em] transition ${
-                    relationFocus === "incoming"
-                      ? "bg-orange-100 text-orange-900"
-                      : "text-slate-600 hover:bg-orange-50 hover:text-orange-900"
-                  }`}
-                >
-                  Relaciones entrantes
-                </button>
+                <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-orange-800">Relaciones entrantes</h4>
                 <div className="mt-2 space-y-2">
                   {incoming.length === 0 && (
                     <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
@@ -446,7 +407,7 @@ export default function HomePage() {
             </div>
 
             <p className="mt-3 px-1 text-sm text-slate-600">
-              Selecciona una prueba y luego elige relaciones salientes o entrantes en el panel lateral para resaltar esa dirección.
+              Haz clic en un círculo para ver de inmediato todas sus relaciones: verde hacia las pruebas que dependen de ella y naranja desde sus prerrequisitos o antecedentes.
             </p>
 
             <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/70 p-3">
@@ -471,70 +432,13 @@ export default function HomePage() {
                   </marker>
                 </defs>
 
-                {verifiedRelations.map((relation) => {
-                  const source = nodeByCode.get(relation.from);
-                  const target = nodeByCode.get(relation.to);
-
-                  if (!source || !target) {
-                    return null;
-                  }
-
-                  const relationKey = `${relation.from}-${relation.to}`;
-                  const isFocused = focusedRelationKeys.has(relationKey);
-                  if (!isFocused) {
-                    return null;
-                  }
-                  const directionColor = isFocused
-                    ? relationFocus === "outgoing"
-                      ? "#16a34a"
-                      : "#ea580c"
-                    : relationColor(relation.type);
-                  const markerEnd = isFocused
-                    ? relationFocus === "outgoing"
-                      ? "url(#arrow-outgoing)"
-                      : "url(#arrow-incoming)"
-                    : relation.type === "prerequisite"
-                      ? "url(#arrow-prerequisite)"
-                      : "url(#arrow-data)";
-
-                  const dx = target.x - source.x;
-                  const dy = target.y - source.y;
-                  const distance = Math.hypot(dx, dy) || 1;
-                  const ux = dx / distance;
-                  const uy = dy / distance;
-                  const sourceRadius = selectedProcedure.code === relation.from ? 37 : 31;
-                  const targetRadius = selectedProcedure.code === relation.to ? 37 : 31;
-
-                  // Draw edges from node border to node border so arrowheads are never hidden by circles.
-                  const x1 = source.x + ux * (sourceRadius + 2);
-                  const y1 = source.y + uy * (sourceRadius + 2);
-                  const x2 = target.x - ux * (targetRadius + 4);
-                  const y2 = target.y - uy * (targetRadius + 4);
-
-                  return (
-                    <line
-                      key={relationKey}
-                      x1={x1}
-                      y1={y1}
-                      x2={x2}
-                      y2={y2}
-                      stroke={directionColor}
-                      strokeWidth={isFocused ? 3.6 : 2.3}
-                      strokeDasharray={relation.type === "data_dependency" ? "7 6" : undefined}
-                      markerEnd={markerEnd}
-                      strokeLinecap="round"
-                      opacity={0.94}
-                    />
-                  );
-                })}
-
                 {nodes.map((node) => {
                   const isSelected = node.code === selectedProcedure.code;
-                  const isOutgoingTarget = relationFocus === "outgoing" && outgoingCodes.has(node.code);
-                  const isIncomingSource = relationFocus === "incoming" && incomingCodes.has(node.code);
+                  const isOutgoingTarget = outgoingCodes.has(node.code);
+                  const isIncomingSource = incomingCodes.has(node.code);
                   const isBidirectional = isOutgoingTarget && isIncomingSource;
                   const isRelated = isSelected || isOutgoingTarget || isIncomingSource;
-                  const isInactive = relationFocus !== "none" && !isRelated;
+                  const isInactive = !isRelated;
                   const nodeFill = isSelected
                     ? "#dbeafe"
                     : isBidirectional
@@ -543,9 +447,7 @@ export default function HomePage() {
                         ? "#dcfce7"
                         : isIncomingSource
                           ? "#ffedd5"
-                          : isInactive
-                            ? "#f8fafc"
-                            : "#ffffff";
+                          : "#f8fafc";
                   const nodeStroke = isSelected
                     ? "#0284c7"
                     : isBidirectional
@@ -554,9 +456,7 @@ export default function HomePage() {
                         ? "#16a34a"
                         : isIncomingSource
                           ? "#ea580c"
-                          : isInactive
-                            ? "#cbd5e1"
-                            : studyStatusColor(node.studyStatus);
+                          : "#cbd5e1";
                   const nodeRadius = isSelected ? 37 : isInactive ? 19 : 31;
                   const labelSize = isInactive ? 8.5 : 12;
                   const labelColor = isInactive ? "#94a3b8" : "#0f172a";
@@ -585,6 +485,54 @@ export default function HomePage() {
                     </g>
                   );
                 })}
+
+                {verifiedRelations.map((relation) => {
+                  const source = nodeByCode.get(relation.from);
+                  const target = nodeByCode.get(relation.to);
+
+                  if (!source || !target) {
+                    return null;
+                  }
+
+                  const relationKey = `${relation.from}-${relation.to}`;
+                  if (!selectedRelationKeys.has(relationKey)) {
+                    return null;
+                  }
+                  const isOutgoing = relation.from === selectedProcedure.code;
+                  const directionColor = isOutgoing ? "#16a34a" : "#ea580c";
+                  const markerEnd = isOutgoing ? "url(#arrow-outgoing)" : "url(#arrow-incoming)";
+
+                  const dx = target.x - source.x;
+                  const dy = target.y - source.y;
+                  const distance = Math.hypot(dx, dy) || 1;
+                  const ux = dx / distance;
+                  const uy = dy / distance;
+                  const sourceRadius = selectedProcedure.code === relation.from ? 37 : 31;
+                  const targetRadius = selectedProcedure.code === relation.to ? 37 : 31;
+
+                  // Draw edges from node border to node border so arrowheads are never hidden by circles.
+                  const x1 = source.x + ux * (sourceRadius + 2);
+                  const y1 = source.y + uy * (sourceRadius + 2);
+                  const x2 = target.x - ux * (targetRadius + 4);
+                  const y2 = target.y - uy * (targetRadius + 4);
+
+                  return (
+                    <line
+                      key={relationKey}
+                      x1={x1}
+                      y1={y1}
+                      x2={x2}
+                      y2={y2}
+                      stroke={directionColor}
+                      strokeWidth={3.6}
+                      strokeDasharray={relation.type === "data_dependency" ? "7 6" : undefined}
+                      markerEnd={markerEnd}
+                      strokeLinecap="round"
+                      opacity={0.94}
+                    />
+                  );
+                })}
+
               </svg>
             </div>
           </div>
@@ -627,32 +575,6 @@ export default function HomePage() {
 
             <div className="mt-4 space-y-3">
               <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Conexiones visibles</h4>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => focusDirection("outgoing")}
-                  aria-pressed={relationFocus === "outgoing"}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    relationFocus === "outgoing"
-                      ? "bg-emerald-600 text-white"
-                      : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-                  }`}
-                >
-                  Relaciones salientes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => focusDirection("incoming")}
-                  aria-pressed={relationFocus === "incoming"}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    relationFocus === "incoming"
-                      ? "bg-orange-600 text-white"
-                      : "border border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100"
-                  }`}
-                >
-                  Relaciones entrantes
-                </button>
-              </div>
               {selectedRelationKeys.size === 0 && (
                 <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
                   Esta prueba no tiene enlaces entrantes o salientes verificados en el conjunto actual.
