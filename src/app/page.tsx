@@ -618,3 +618,69 @@ export default function HomePage() {
                       <p className="text-sm text-slate-800">{specialCondition.summary}</p>
                       <p className="mt-2 text-sm font-medium text-amber-900">
                         Esta condición orienta el estudio del procedimiento; no define por sí sola una secuencia operativa obligatoria.
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <div className="mt-4 space-y-3">
+              <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-600">Conexiones visibles</h4>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => focusDirection("outgoing")}
+                  aria-pressed={relationFocus === "outgoing"}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    relationFocus === "outgoing"
+                      ? "bg-emerald-600 text-white"
+                      : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                  }`}
+                >
+                  Relaciones salientes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => focusDirection("incoming")}
+                  aria-pressed={relationFocus === "incoming"}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    relationFocus === "incoming"
+                      ? "bg-orange-600 text-white"
+                      : "border border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100"
+                  }`}
+                >
+                  Relaciones entrantes
+                </button>
+              </div>
+              {selectedRelationKeys.size === 0 && (
+                <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
+                  Esta prueba no tiene enlaces entrantes o salientes verificados en el conjunto actual.
+                </p>
+              )}
+              {verifiedRelations
+                .filter((relation) => selectedRelationKeys.has(`${relation.from}-${relation.to}`))
+                .map((relation) => (
+                  <article key={`${relation.from}-${relation.to}`} className="rounded-lg border border-slate-200 p-3">
+                    <p className="text-sm font-semibold text-slate-900">{relation.from} → {relation.to}</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      <span
+                        className={`rounded-full px-2 py-1 font-medium ${
+                          relation.type === "prerequisite"
+                            ? "bg-amber-100 text-amber-900"
+                            : "bg-sky-100 text-sky-900"
+                        }`}
+                      >
+                        {typeLabel(relation.type)}
+                      </span>
+                    </p>
+                    <p className="mt-2 text-sm text-slate-700">{relation.rationale}</p>
+                  </article>
+                ))}
+            </div>
+          </aside>
+        </section>
+      )}
+    </main>
+  );
+}
