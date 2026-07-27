@@ -121,9 +121,14 @@ export const procedures: Procedure[] = [
   },
   {
     code: "T50-02376",
-    name: "Tension inducida",
+    name: "Tension inducida, con o sin medición de descargas parciales",
     category: "Prueba dielectrica de tension inducida",
-    studyStatus: "pending"
+    studyStatus: "studied",
+    didacticSummary: {
+      apply: "Se energiza normalmente el devanado de baja tensión con una tensión alterna superior a la nominal y a frecuencia mayor que la nominal, para inducir la tensión de prueba en el devanado de alta tensión sin saturar el núcleo.",
+      measure: "Se registran la tensión inducida, la frecuencia y el tiempo de aplicación; cuando aplica la modalidad IVPD, también se mide y registra el nivel de descargas parciales.",
+      obtain: "Se verifica la capacidad del aislamiento entre espiras, secciones y devanados para soportar la sobretensión especificada; con IVPD se evalúa además la estabilidad y magnitud de las descargas parciales."
+    }
   },
   {
     code: "T50-02408",
@@ -269,6 +274,12 @@ export const documentedSpecialConditions: SpecialConditionsByProcedure = {
     {
       summary:
         "Puede requerirse desmagnetización del núcleo antes de la prueba, en especial si previamente se realizaron mediciones de resistencia de devanados o ensayos de impulso, porque esas actividades pueden dejar el núcleo magnetizado."
+    }
+  ],
+  "T50-02376": [
+    {
+      summary:
+        "Cuando se ejecuta la modalidad de tensión inducida con medición de descargas parciales y su nivel de realce alcanza la tensión requerida por la norma aplicable, puede sustituir la prueba de tensión inducida simple. Esta condición depende de la norma y del nivel de tensión especificado para la unidad."
     }
   ]
 };
