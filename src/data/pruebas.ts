@@ -151,7 +151,12 @@ export const procedures: Procedure[] = [
     code: "T50-02407",
     name: "Corrientes de excitacion monofasica",
     category: "Medicion de corrientes de excitacion monofasica",
-    studyStatus: "pending"
+    studyStatus: "studied",
+    didacticSummary: {
+      apply: "Se aplica tensión alterna a frecuencia industrial, normalmente hasta 10 kV y menor que la tensión fase-neutro, a un terminal por vez; los demás devanados quedan abiertos, salvo el neutro cuando corresponde.",
+      measure: "El equipo registra para cada fase y posición de tap la corriente de excitación en mA y las pérdidas en W; la prueba limita la lectura de corriente a 150 mA.",
+      obtain: "Se obtiene un patrón de corrientes y pérdidas para comparar entre fases, posiciones del conmutador y registros previos, útil para diagnosticar anomalías del núcleo, espiras o conmutador."
+    }
   },
   {
     code: "T50-02692",
