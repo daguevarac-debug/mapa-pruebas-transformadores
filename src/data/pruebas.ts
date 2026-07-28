@@ -200,7 +200,12 @@ export const procedures: Procedure[] = [
     code: "T50-04590",
     name: "Ensayos electricos en transformadores de corriente",
     category: "Ensayos electricos en transformadores de corriente",
-    studyStatus: "pending"
+    studyStatus: "studied",
+    didacticSummary: {
+      apply: "Se prueba cada transformador de corriente de forma individual o ya instalado en el tablero o la tapa del transformador; según el ensayo se inyecta tensión o corriente controlada en sus terminales.",
+      measure: "Se verifican la relación de transformación y polaridad, la resistencia de aislamiento y devanados, la curva de magnetización, el punto de codo y la cargabilidad del secundario.",
+      obtain: "Se confirma que el TC entrega una señal secundaria correcta y adecuada para medida, protección y control, y que su núcleo, devanados y aislamiento no presentan desviaciones frente a los datos del fabricante o TCs equivalentes."
+    }
   },
   {
     code: "T50-04598",
