@@ -414,6 +414,24 @@ export default function HomePage() {
                   ))}
                 </div>
               </section>
+
+              <section>
+                <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-violet-800">Relaciones complementarias</h4>
+                <div className="mt-2 space-y-2">
+                  {sharedRelations.length === 0 && (
+                    <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
+                      Sin relaciones de montaje compartido documentadas.
+                    </p>
+                  )}
+                  {sharedRelations.map((relation) => (
+                    <article key={`${relation.from}-${relation.to}`} className="rounded-lg border border-violet-200 bg-violet-50/50 p-3">
+                      <p className="text-sm font-semibold text-slate-900">{relation.from} ↔ {relation.to}</p>
+                      <p className="mt-2 text-sm text-slate-700">{relation.rationale}</p>
+                      <p className="mt-2 text-sm text-slate-600"><strong>Condición:</strong> {relation.condition}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
             </div>
           </aside>
         </section>

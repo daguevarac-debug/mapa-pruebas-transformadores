@@ -145,7 +145,12 @@ export const procedures: Procedure[] = [
     code: "T50-02338",
     name: "Nivel de ruido audible",
     category: "Prueba de nivel de ruido audible",
-    studyStatus: "pending"
+    studyStatus: "studied",
+    didacticSummary: {
+      apply: "Se energiza el transformador con el mismo montaje de pérdidas en vacío, a tensión y frecuencia nominales, con los devanados no alimentados en circuito abierto.",
+      measure: "Se registra el nivel de presión sonora alrededor del transformador en los puntos, distancias y condiciones ambientales definidos por el método aplicable.",
+      obtain: "Se obtiene el nivel de ruido audible del transformador, corregido o promediado según el método de medición, para contrastarlo con el valor especificado."
+    }
   },
   {
     code: "T50-02407",
@@ -206,6 +211,16 @@ export const procedures: Procedure[] = [
 ];
 
 export const verifiedRelations: ProcedureRelation[] = [
+  {
+    from: "T50-02417",
+    to: "T50-02338",
+    type: "shared_setup",
+    stage: "concurrent",
+    rationale:
+      "La medición de ruido audible se realiza con el mismo montaje de energización utilizado para pérdidas en vacío.",
+    condition:
+      "Con el transformador energizado a tensión y frecuencia nominales, y los devanados no alimentados en circuito abierto."
+  },
   {
     from: "T50-02417",
     to: "T50-04588",
