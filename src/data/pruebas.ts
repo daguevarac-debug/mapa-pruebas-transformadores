@@ -1,4 +1,4 @@
-export type RelationType = "prerequisite" | "data_dependency";
+export type RelationType = "prerequisite" | "data_dependency" | "shared_setup";
 export type StudyStatus = "studied" | "in_progress" | "pending";
 
 export interface Procedure {
@@ -20,7 +20,7 @@ export interface ProcedureRelation {
   from: string;
   to: string;
   type: RelationType;
-  stage: "preparation" | "calculation";
+  stage: "preparation" | "calculation" | "concurrent";
   rationale: string;
   condition: string;
   transferredData?: string;
@@ -179,7 +179,12 @@ export const procedures: Procedure[] = [
     code: "T50-04588",
     name: "Armonicos de corriente",
     category: "Medida de armonicos de corriente",
-    studyStatus: "pending"
+    studyStatus: "studied",
+    didacticSummary: {
+      apply: "Durante la medición de pérdidas en vacío se mantiene el mismo circuito de excitación y se energiza el transformador a 90 %, 100 % y 110 % de la tensión nominal.",
+      measure: "Con el analizador HIOKI 3193 se registra el contenido armónico de la corriente de excitación de cada fase, junto con la calidad de la tensión aplicada.",
+      obtain: "Se obtiene el perfil armónico de la corriente de magnetización, útil como control de calidad y como huella de referencia para comparar el transformador después de su puesta en servicio."
+    }
   },
   {
     code: "T50-04590",
@@ -201,6 +206,16 @@ export const procedures: Procedure[] = [
 ];
 
 export const verifiedRelations: ProcedureRelation[] = [
+  {
+    from: "T50-02417",
+    to: "T50-04588",
+    type: "shared_setup",
+    stage: "concurrent",
+    rationale:
+      "La medida de armónicos se realiza durante la prueba de pérdidas en vacío y aprovecha el mismo montaje de excitación.",
+    condition:
+      "Durante las lecturas de pérdidas en vacío, a frecuencia nominal y en los niveles de tensión definidos por el procedimiento."
+  },
   {
     from: "T50-02386",
     to: "T50-02404",
