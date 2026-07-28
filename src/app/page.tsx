@@ -5,13 +5,15 @@ import { documentedSpecialConditions, procedures, StudyStatus, verifiedRelations
 
 type ViewMode = "explore" | "map";
 
-function typeLabel(type: "prerequisite" | "data_dependency") {
+function typeLabel(type: "prerequisite" | "data_dependency" | "shared_setup") {
   if (type === "prerequisite") return "Prerequisito";
+  if (type === "shared_setup") return "Se realiza durante / comparte montaje";
   return "Dependencia de datos";
 }
 
-function relationColor(type: "prerequisite" | "data_dependency") {
+function relationColor(type: "prerequisite" | "data_dependency" | "shared_setup") {
   if (type === "prerequisite") return "#b45309";
+  if (type === "shared_setup") return "#7e22ce";
   return "#0369a1";
 }
 
@@ -49,12 +51,12 @@ export default function HomePage() {
   );
 
   const outgoing = useMemo(
-    () => verifiedRelations.filter((relation) => relation.from === selectedProcedure.code),
+    () => verifiedRelations.filter((relation) => relation.type !== "shared_setup" && relation.from === selectedProcedure.code),
     [selectedProcedure.code]
   );
 
   const incoming = useMemo(
-    () => verifiedRelations.filter((relation) => relation.to === selectedProcedure.code),
+    () => verifiedRelations.filter((relation) => relation.type !== "shared_setup" && relation.to === selectedProcedure.code),
     [selectedProcedure.code]
   );
 
@@ -96,21 +98,32 @@ export default function HomePage() {
     [incoming]
   );
 
+  const sharedRelations = useMemo(
+    () => verifiedRelations.filter((relation) => relation.type === "shared_setup" && (relation.from === selectedProcedure.code || relation.to === selectedProcedure.code)),
+    [selectedProcedure.code]
+  );
+
+  const sharedCodes = useMemo(
+    () => new Set(sharedRelations.map((relation) => (relation.from === selectedProcedure.code ? relation.to : relation.from))),
+    [sharedRelations, selectedProcedure.code]
+  );
+
   const selectProcedure = (code: string) => {
     setSelectedCode(code);
   };
 
   const selectedNarrative = useMemo(() => {
-    if (incoming.length === 0 && outgoing.length === 0) {
+    if (incoming.length === 0 && outgoing.length === 0 && sharedRelations.length === 0) {
       return "Esta prueba no muestra relaciones verificadas directas en la matriz actual; puede estudiarse como referencia individual dentro del mapa.";
     }
 
-    const total = incoming.length + outgoing.length;
+    const total = incoming.length + outgoing.length + sharedRelations.length;
     const prerequisiteCount = [...incoming, ...outgoing].filter((relation) => relation.type === "prerequisite").length;
     const dataCount = [...incoming, ...outgoing].filter((relation) => relation.type === "data_dependency").length;
 
-    return `Esta vista muestra ${total} conexión(es) verificadas para ${selectedProcedure.code}: ${outgoing.length} saliente(s), ${incoming.length} entrante(s), ${prerequisiteCount} de tipo prerequisito y ${dataCount} de tipo dependencia de datos. Úsala como apoyo didáctico para interpretar dependencias documentadas, no como una secuencia operativa obligatoria.`;
-  }, [incoming, outgoing, selectedProcedure.code]);
+    const sharedCount = sharedRelations.length;
+    return `Esta vista muestra ${total} conexión(es) verificadas para ${selectedProcedure.code}: ${outgoing.length} saliente(s), ${incoming.length} entrante(s), ${sharedCount} relación(es) de montaje compartido, ${prerequisiteCount} de tipo prerequisito y ${dataCount} de tipo dependencia de datos. Úsala como apoyo didáctico para interpretar dependencias documentadas, no como una secuencia operativa obligatoria.`;
+  }, [incoming, outgoing, selectedProcedure.code, sharedRelations]);
 
   const selectedSpecialConditions = documentedSpecialConditions[selectedProcedure.code] ?? [];
 
@@ -203,6 +216,7 @@ export default function HomePage() {
                 const isActive = selectedProcedure.code === procedure.code;
                 const isOutgoingTarget = outgoingCodes.has(procedure.code);
                 const isIncomingSource = incomingCodes.has(procedure.code);
+                const isShared = sharedCodes.has(procedure.code);
                 const isBidirectional = isOutgoingTarget && isIncomingSource;
                 const relationHighlightClass = isActive
                   ? "border-sky-300 bg-sky-50 shadow"
@@ -210,8 +224,10 @@ export default function HomePage() {
                     ? "border-violet-300 bg-violet-50"
                     : isOutgoingTarget
                       ? "border-emerald-300 bg-emerald-50"
-                      : isIncomingSource
-                        ? "border-orange-300 bg-orange-50"
+                    : isIncomingSource
+                      ? "border-orange-300 bg-orange-50"
+                      : isShared
+                        ? "border-violet-300 bg-violet-50"
                         : "border-slate-200 bg-white hover:border-sky-200 hover:bg-slate-50";
                 return (
                   <button
@@ -234,6 +250,11 @@ export default function HomePage() {
                     {!isActive && isIncomingSource && !isOutgoingTarget && (
                       <span className="ml-2 inline-flex rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
                         Entrante
+                      </span>
+                    )}
+                    {!isActive && isShared && !isOutgoingTarget && !isIncomingSource && (
+                      <span className="ml-2 inline-flex rounded-full bg-violet-100 px-2 py-1 text-xs font-medium text-violet-800">
+                        Montaje compartido
                       </span>
                     )}
                     {procedure.category ? (
@@ -340,6 +361,24 @@ export default function HomePage() {
               </section>
 
               <section>
+                <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-violet-800">Relaciones complementarias</h4>
+                <div className="mt-2 space-y-2">
+                  {sharedRelations.length === 0 && (
+                    <p className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600">
+                      Sin relaciones de montaje compartido documentadas.
+                    </p>
+                  )}
+                  {sharedRelations.map((relation) => (
+                    <article key={`${relation.from}-${relation.to}`} className="rounded-lg border border-violet-200 bg-violet-50/50 p-3">
+                      <p className="text-sm font-semibold text-slate-900">{relation.from} ↔ {relation.to}</p>
+                      <p className="mt-2 text-sm text-slate-700">{relation.rationale}</p>
+                      <p className="mt-2 text-sm text-slate-600"><strong>Condición:</strong> {relation.condition}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section>
                 <h4 className="text-sm font-semibold uppercase tracking-[0.08em] text-orange-800">Relaciones entrantes</h4>
                 <div className="mt-2 space-y-2">
                   {incoming.length === 0 && (
@@ -403,11 +442,14 @@ export default function HomePage() {
                 <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-orange-800">
                   <span className="h-[2px] w-6 bg-orange-600" aria-hidden /> Entrante
                 </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-violet-800">
+                  <span className="h-[2px] w-6 border-t-2 border-dashed border-violet-700" aria-hidden /> Montaje compartido
+                </span>
               </div>
             </div>
 
             <p className="mt-3 px-1 text-sm text-slate-600">
-              Haz clic en un círculo para ver de inmediato todas sus relaciones: verde hacia las pruebas que dependen de ella y naranja desde sus prerrequisitos o antecedentes.
+              Haz clic en un círculo para ver de inmediato todas sus relaciones: verde hacia las pruebas que dependen de ella, naranja desde sus prerrequisitos o antecedentes y morado cuando dos pruebas se realizan con el mismo montaje.
             </p>
 
             <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/70 p-3">
@@ -436,8 +478,9 @@ export default function HomePage() {
                   const isSelected = node.code === selectedProcedure.code;
                   const isOutgoingTarget = outgoingCodes.has(node.code);
                   const isIncomingSource = incomingCodes.has(node.code);
+                  const isShared = sharedCodes.has(node.code);
                   const isBidirectional = isOutgoingTarget && isIncomingSource;
-                  const isRelated = isSelected || isOutgoingTarget || isIncomingSource;
+                  const isRelated = isSelected || isOutgoingTarget || isIncomingSource || isShared;
                   const isInactive = !isRelated;
                   const nodeFill = isSelected
                     ? "#dbeafe"
@@ -447,6 +490,8 @@ export default function HomePage() {
                         ? "#dcfce7"
                         : isIncomingSource
                           ? "#ffedd5"
+                          : isShared
+                            ? "#f3e8ff"
                           : "#f8fafc";
                   const nodeStroke = isSelected
                     ? "#0284c7"
@@ -456,6 +501,8 @@ export default function HomePage() {
                         ? "#16a34a"
                         : isIncomingSource
                           ? "#ea580c"
+                          : isShared
+                            ? "#7e22ce"
                           : "#cbd5e1";
                   const nodeRadius = isSelected ? 37 : isInactive ? 19 : 31;
                   const labelSize = isInactive ? 8.5 : 12;
@@ -498,9 +545,10 @@ export default function HomePage() {
                   if (!selectedRelationKeys.has(relationKey)) {
                     return null;
                   }
+                  const isShared = relation.type === "shared_setup";
                   const isOutgoing = relation.from === selectedProcedure.code;
-                  const directionColor = isOutgoing ? "#16a34a" : "#ea580c";
-                  const markerEnd = isOutgoing ? "url(#arrow-outgoing)" : "url(#arrow-incoming)";
+                  const directionColor = isShared ? "#7e22ce" : isOutgoing ? "#16a34a" : "#ea580c";
+                  const markerEnd = isShared ? undefined : isOutgoing ? "url(#arrow-outgoing)" : "url(#arrow-incoming)";
 
                   const dx = target.x - source.x;
                   const dy = target.y - source.y;
@@ -525,7 +573,7 @@ export default function HomePage() {
                       y2={y2}
                       stroke={directionColor}
                       strokeWidth={3.6}
-                      strokeDasharray={relation.type === "data_dependency" ? "7 6" : undefined}
+                      strokeDasharray={isShared ? "3 7" : relation.type === "data_dependency" ? "7 6" : undefined}
                       markerEnd={markerEnd}
                       strokeLinecap="round"
                       opacity={0.94}
@@ -584,12 +632,14 @@ export default function HomePage() {
                 .filter((relation) => selectedRelationKeys.has(`${relation.from}-${relation.to}`))
                 .map((relation) => (
                   <article key={`${relation.from}-${relation.to}`} className="rounded-lg border border-slate-200 p-3">
-                    <p className="text-sm font-semibold text-slate-900">{relation.from} → {relation.to}</p>
+                    <p className="text-sm font-semibold text-slate-900">{relation.type === "shared_setup" ? `${relation.from} ↔ ${relation.to}` : `${relation.from} → ${relation.to}`}</p>
                     <p className="mt-1 text-xs text-slate-600">
                       <span
                         className={`rounded-full px-2 py-1 font-medium ${
                           relation.type === "prerequisite"
                             ? "bg-amber-100 text-amber-900"
+                            : relation.type === "shared_setup"
+                              ? "bg-violet-100 text-violet-900"
                             : "bg-sky-100 text-sky-900"
                         }`}
                       >
