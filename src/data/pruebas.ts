@@ -167,7 +167,12 @@ export const procedures: Procedure[] = [
     code: "T50-02692",
     name: "SFRA",
     category: "Analisis de respuesta en frecuencia de barrido",
-    studyStatus: "pending"
+    studyStatus: "studied",
+    didacticSummary: {
+      apply: "Se conecta el analizador SFRA a los terminales del devanado y se inyecta una señal de baja tensión cuyo barrido cubre un amplio rango de frecuencias.",
+      measure: "El equipo registra la respuesta en frecuencia o función de transferencia para cada conexión, siguiendo una configuración repetible de cables, puesta a tierra y terminales.",
+      obtain: "Se obtiene la huella de respuesta en frecuencia del transformador, que se compara entre fases, con registros de fábrica o con mediciones previas para identificar cambios mecánicos en núcleo, devanados, conexiones o cables."
+    }
   },
   {
     code: "T50-02869",
