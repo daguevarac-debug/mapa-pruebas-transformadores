@@ -30,6 +30,53 @@ export interface DocumentedSpecialCondition {
   summary: string;
 }
 
+/** Familias didácticas derivadas únicamente del objetivo descrito en cada ficha. */
+export const technicalFamilies = [
+  "Excitación, núcleo y ruido",
+  "Devanados, relación y respuesta mecánica",
+  "Pérdidas y calentamiento",
+  "Aislamiento dieléctrico",
+  "Impedancia de secuencia cero",
+  "Transformadores de corriente"
+] as const;
+
+export type TechnicalFamily = (typeof technicalFamilies)[number];
+
+export const procedureFamilies: Record<Procedure["code"], TechnicalFamily> = {
+  "T50-02386": "Devanados, relación y respuesta mecánica",
+  "T50-02413": "Devanados, relación y respuesta mecánica",
+  "T50-02417": "Excitación, núcleo y ruido",
+  "T50-02404": "Pérdidas y calentamiento",
+  "T50-02416": "Aislamiento dieléctrico",
+  "T50-02398": "Aislamiento dieléctrico",
+  "T50-02367": "Pérdidas y calentamiento",
+  "T50-02393": "Aislamiento dieléctrico",
+  "T50-02376": "Aislamiento dieléctrico",
+  "T50-02408": "Aislamiento dieléctrico",
+  "T50-02338": "Excitación, núcleo y ruido",
+  "T50-02407": "Excitación, núcleo y ruido",
+  "T50-02692": "Devanados, relación y respuesta mecánica",
+  "T50-02869": "Impedancia de secuencia cero",
+  "T50-04588": "Excitación, núcleo y ruido",
+  "T50-04590": "Transformadores de corriente",
+  "T50-04598": "Aislamiento dieléctrico"
+};
+
+/** Contextos mostrados solo cuando una relación documentada los respalda. */
+export interface DocumentedContext {
+  id: string;
+  label: string;
+  codes: Procedure["code"][];
+}
+
+export const documentedContexts: DocumentedContext[] = [
+  {
+    id: "shared-no-load-setup",
+    label: "Comparte montaje con pérdidas en vacío",
+    codes: ["T50-02338", "T50-04588"]
+  }
+];
+
 export const procedures: Procedure[] = [
   {
     code: "T50-02386",
