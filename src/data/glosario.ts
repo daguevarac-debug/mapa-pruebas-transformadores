@@ -35,9 +35,16 @@ export const glossaryTerms: GlossaryTerm[] = [
   {
     id: "corriente-excitacion",
     label: "Corriente de excitación",
-    aliases: ["corriente de excitación", "corrientes de excitación", "corriente de magnetización"],
-    definition: "Corriente que aparece al energizar el transformador en vacío y que establece el flujo magnético en el núcleo.",
-    analogy: "Es la corriente mínima que pone a trabajar el imán interno antes de que el transformador entregue energía a una carga."
+    aliases: ["corriente de excitación", "corrientes de excitación"],
+    definition: "Corriente total que toma el transformador al energizarse en vacío. Incluye la componente de magnetización y la componente asociada a las pérdidas en el núcleo.",
+    analogy: "Como la energía total necesaria para mantener encendido un sistema: una parte crea el efecto principal y otra cubre sus pérdidas internas."
+  },
+  {
+    id: "corriente-magnetizacion",
+    label: "Corriente de magnetización",
+    aliases: ["corriente de magnetización", "corriente magnetizante"],
+    definition: "Componente de la corriente de excitación que establece el flujo magnético en el núcleo. No equivale por sí sola a toda la corriente de excitación.",
+    analogy: "Como la parte de la energía que realmente crea el campo de un electroimán; el consumo total también incluye pequeñas pérdidas internas."
   },
   {
     id: "tangente-delta",
@@ -98,8 +105,15 @@ export const glossaryTerms: GlossaryTerm[] = [
   {
     id: "punto-codo",
     label: "Punto de codo",
-    aliases: ["punto de codo", "curva de magnetización"],
+    aliases: ["punto de codo"],
     definition: "Referencia de la curva de magnetización de un transformador de corriente, usada junto con otras verificaciones de su secundario.",
     analogy: "Como el punto de una pendiente donde aumentar el esfuerzo empieza a producir una respuesta mucho menos proporcional."
+  },
+  {
+    id: "curva-magnetizacion",
+    label: "Curva de magnetización",
+    aliases: ["curva de magnetización"],
+    definition: "Gráfica que relaciona la tensión aplicada al secundario de un transformador de corriente con su corriente de excitación. Permite observar el comportamiento del núcleo y ubicar el punto de codo cuando corresponde.",
+    analogy: "Como una gráfica de cuánto esfuerzo necesita un resorte para deformarse: muestra toda la respuesta, mientras que el punto de codo señala una zona particular de esa respuesta."
   }
 ];
