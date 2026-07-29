@@ -45,7 +45,8 @@ function escapeRegExp(value: string) { return value.replace(/[.*+?^${}()|[\]\\]/
 const glossaryMatches = glossaryTerms
   .flatMap((term) => term.aliases.map((alias) => ({ term, alias })))
   .sort((a, b) => b.alias.length - a.alias.length);
-const glossaryPattern = new RegExp(`(${glossaryMatches.map(({ alias }) => escapeRegExp(alias)).join("|")})`, "giu");
+// Los límites evitan coincidencias parciales: por ejemplo, BIL no debe activarse dentro de “estabilizar”.
+const glossaryPattern = new RegExp(`((?<![\\p{L}\\p{N}])(?:${glossaryMatches.map(({ alias }) => escapeRegExp(alias)).join("|")})(?![\\p{L}\\p{N}]))`, "giu");
 
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("explore");
