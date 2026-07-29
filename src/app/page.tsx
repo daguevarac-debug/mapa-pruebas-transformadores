@@ -18,18 +18,18 @@ type ViewMode = "explore" | "map";
 const layout: Record<string, { x: number; y: number }> = {
   "T50-02417": { x: 150, y: 150 }, "T50-02338": { x: 340, y: 150 }, "T50-02407": { x: 530, y: 150 }, "T50-04588": { x: 720, y: 150 },
   "T50-02386": { x: 160, y: 340 }, "T50-02413": { x: 380, y: 340 }, "T50-02692": { x: 600, y: 340 },
-  "T50-02404": { x: 850, y: 300 }, "T50-02367": { x: 1030, y: 300 },
+  "T50-02404": { x: 850, y: 340 }, "T50-02367": { x: 1030, y: 340 },
   "T50-02416": { x: 120, y: 540 }, "T50-02398": { x: 300, y: 540 }, "T50-02393": { x: 480, y: 540 }, "T50-02376": { x: 660, y: 540 }, "T50-02408": { x: 840, y: 540 }, "T50-04598": { x: 1020, y: 540 },
   "T50-02869": { x: 390, y: 730 }, "T50-04590": { x: 770, y: 730 }
 };
 
 const familyAreas = [
-  { label: "Excitación, núcleo y ruido", x: 52, y: 74, width: 720, height: 124, fill: "#ecfeff", stroke: "#a5f3fc" },
-  { label: "Devanados, relación y respuesta mecánica", x: 52, y: 256, width: 650, height: 136, fill: "#f0fdf4", stroke: "#bbf7d0" },
-  { label: "Pérdidas y calentamiento", x: 762, y: 256, width: 360, height: 136, fill: "#fff7ed", stroke: "#fed7aa" },
-  { label: "Aislamiento dieléctrico", x: 52, y: 452, width: 1068, height: 142, fill: "#faf5ff", stroke: "#e9d5ff" },
-  { label: "Impedancia de secuencia cero", x: 250, y: 650, width: 286, height: 122, fill: "#f8fafc", stroke: "#cbd5e1" },
-  { label: "Transformadores de corriente", x: 638, y: 650, width: 300, height: 122, fill: "#f0fdfa", stroke: "#99f6e4" }
+  { label: "Excitación, núcleo y ruido", x: 30, y: 74, width: 810, height: 124, fill: "#ecfeff", stroke: "#a5f3fc" },
+  { label: "Devanados, relación y respuesta mecánica", x: 50, y: 256, width: 660, height: 136, fill: "#f0fdf4", stroke: "#bbf7d0" },
+  { label: "Pérdidas y calentamiento", x: 755, y: 256, width: 370, height: 150, fill: "#fff7ed", stroke: "#fed7aa" },
+  { label: "Aislamiento dieléctrico", x: 48, y: 452, width: 1044, height: 142, fill: "#faf5ff", stroke: "#e9d5ff" },
+  { label: "Impedancia de secuencia cero", x: 245, y: 650, width: 290, height: 122, fill: "#f8fafc", stroke: "#cbd5e1" },
+  { label: "Transformadores de corriente", x: 620, y: 650, width: 300, height: 122, fill: "#f0fdfa", stroke: "#99f6e4" }
 ];
 
 function statusLabel(status: StudyStatus) { return status === "studied" ? "Estudiada" : status === "in_progress" ? "En curso" : "Pendiente"; }
