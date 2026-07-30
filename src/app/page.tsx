@@ -470,7 +470,7 @@ export default function HomePage() {
   };
 
   const startPan = (event: PointerEvent<SVGSVGElement>) => {
-    if (!mapViewportRef.current) return;
+    if (!mapViewportRef.current || event.target !== event.currentTarget) return;
     setIsDragging(true);
     panRef.current = {
       pointerId: event.pointerId,
