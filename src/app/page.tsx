@@ -172,6 +172,7 @@ export default function HomePage() {
   const [comparisonCodes, setComparisonCodes] = useState<[string, string]>(["", ""]);
   const [activeGlossaryTerm, setActiveGlossaryTerm] = useState<GlossaryTerm | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [announcement, setAnnouncement] = useState("Mapa listo para explorar.");
 
   const mapViewportRef = useRef<HTMLDivElement>(null);
   const panRef = useRef({
@@ -435,6 +436,11 @@ export default function HomePage() {
     setInspectedRelationKey(null);
     setActiveGlossaryTerm(null);
     if (code) setMapFrameMode("selection");
+    setAnnouncement(
+      code
+        ? `Prueba seleccionada: ${procedureName(code)}.`
+        : "Selección de prueba borrada."
+    );
   };
 
   const toggleFamily = (family: string) => {
@@ -511,6 +517,12 @@ export default function HomePage() {
 
   return (
     <main className="study-shell mx-auto flex min-h-[100dvh] w-full max-w-[1320px] flex-col px-4 py-6 md:px-8 md:py-8">
+      <a className="skip-link" href="#contenido-principal">
+        Saltar al contenido principal
+      </a>
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </div>
       <header className="rounded-3xl border border-slate-200/95 bg-white/92 p-6 shadow-[0_18px_45px_-28px_rgba(15,23,42,0.4)] backdrop-blur md:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.17em] text-teal-700 md:text-sm">
           Mapa de estudio
@@ -528,6 +540,7 @@ export default function HomePage() {
       </header>
 
       <section
+        id="contenido-principal"
         className="mt-4 rounded-3xl border border-slate-200 bg-white/88 p-4 shadow-[0_14px_38px_-30px_rgba(15,23,42,0.45)] backdrop-blur md:p-5"
         aria-label="Búsqueda y filtros"
       >
@@ -544,8 +557,12 @@ export default function HomePage() {
                 setMapFrameMode("filtered");
               }}
               placeholder="Nombre, T50 o palabra de la ficha"
+              aria-describedby="procedure-search-help"
               className="mt-1 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none ring-sky-300 transition-colors duration-150 focus:border-sky-300 focus:ring-2"
             />
+            <span id="procedure-search-help" className="sr-only">
+              Busca por código, nombre, familia o contenido didáctico.
+            </span>
           </div>
           <div className="text-sm text-slate-700" aria-live="polite">
             <strong>{filteredProcedures.length}</strong> de {procedures.length} pruebas coinciden
@@ -588,12 +605,13 @@ export default function HomePage() {
             onClick={() => setShowFamilyFilters((value) => !value)}
             className="flex min-h-11 w-full items-center justify-between rounded-xl px-2 text-left text-sm font-semibold text-slate-800 transition-colors duration-150 hover:bg-slate-50 md:hidden"
             aria-expanded={showFamilyFilters}
+            aria-controls="family-filter-options"
           >
             Familia técnica
             <span aria-hidden="true">{showFamilyFilters ? "−" : "+"}</span>
           </button>
           <p className="hidden text-sm font-semibold text-slate-800 md:block">Familia técnica</p>
-          <div className={`${showFamilyFilters ? "mt-2" : "hidden"} md:mt-2 md:block`}>
+          <div id="family-filter-options" className={`${showFamilyFilters ? "mt-2" : "hidden"} md:mt-2 md:block`}>
             <div className="flex flex-wrap gap-2">
               {technicalFamilies.map((family) => (
                 <button
@@ -620,6 +638,7 @@ export default function HomePage() {
             onClick={() => setShowContextFilters((value) => !value)}
             className="flex min-h-11 w-full items-center justify-between rounded-xl px-2 text-left text-sm font-semibold text-slate-800 transition-colors duration-150 hover:bg-slate-50 md:hidden"
             aria-expanded={showContextFilters}
+            aria-controls="context-filter-options"
           >
             Contexto de ejecución documentado
             <span aria-hidden="true">{showContextFilters ? "−" : "+"}</span>
@@ -627,7 +646,7 @@ export default function HomePage() {
           <p className="hidden text-sm font-semibold text-slate-800 md:block">
             Contexto de ejecución documentado
           </p>
-          <div className={`${showContextFilters ? "mt-2" : "hidden"} md:mt-2 md:block`}>
+          <div id="context-filter-options" className={`${showContextFilters ? "mt-2" : "hidden"} md:mt-2 md:block`}>
             <div className="flex flex-wrap gap-2">
               {documentedContexts.map((context) => (
                 <button
@@ -654,6 +673,7 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setViewMode("explore")}
+            aria-pressed={viewMode === "explore"}
             className={`min-h-11 rounded-xl px-4 py-3 text-sm font-semibold transition-[background-color,color,transform] duration-200 ease-out active:scale-[0.98] ${
               viewMode === "explore"
                 ? "bg-sky-100 text-sky-900 shadow-inner"
@@ -665,6 +685,7 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setViewMode("map")}
+            aria-pressed={viewMode === "map"}
             className={`min-h-11 rounded-xl px-4 py-3 text-sm font-semibold transition-[background-color,color,transform] duration-200 ease-out active:scale-[0.98] ${
               viewMode === "map"
                 ? "bg-sky-100 text-sky-900 shadow-inner"
@@ -810,6 +831,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => applyMapFrame("full")}
+                    aria-pressed={mapFrameMode === "full"}
                     className={`min-h-10 rounded-lg border px-2 text-xs font-semibold transition-[background-color,color,border-color] duration-200 ${
                       mapFrameMode === "full"
                         ? "border-slate-400 bg-slate-100 text-slate-900"
@@ -821,6 +843,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => applyMapFrame("filtered")}
+                    aria-pressed={mapFrameMode === "filtered"}
                     className={`min-h-10 rounded-lg border px-2 text-xs font-semibold transition-[background-color,color,border-color] duration-200 ${
                       mapFrameMode === "filtered"
                         ? "border-teal-300 bg-teal-50 text-teal-900"
@@ -833,6 +856,7 @@ export default function HomePage() {
                     type="button"
                     onClick={() => applyMapFrame("selection")}
                     disabled={!selectedCode}
+                    aria-pressed={mapFrameMode === "selection"}
                     className={`min-h-10 rounded-lg border px-2 text-xs font-semibold transition-[background-color,color,border-color] duration-200 disabled:cursor-not-allowed disabled:text-slate-300 ${
                       mapFrameMode === "selection"
                         ? "border-sky-300 bg-sky-50 text-sky-900"
@@ -846,9 +870,10 @@ export default function HomePage() {
             </div>
 
             <div className="mt-3 rounded-xl border border-slate-200/90 bg-white/80 p-3 text-sm text-slate-700">
-              <p className="leading-6">
+              <p id="map-instructions" className="leading-6">
                 Pulsa una tarjeta para ver la ficha y sus relaciones. Arrastra el espacio vacío para
-                recorrer el mapa; un clic vacío deselecciona la prueba.
+                recorrer el mapa; también puedes usar Tab y Enter o Espacio sobre cada tarjeta. Un clic
+                vacío deselecciona la prueba.
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
                 <span className="inline-flex items-center gap-1 text-emerald-800">
@@ -869,8 +894,10 @@ export default function HomePage() {
             )}
 
             <div
+              role="region"
+              aria-label="Lienzo del mapa de relaciones"
               ref={mapViewportRef}
-              className="mt-4 overflow-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-2"
+              className="map-viewport mt-4 overflow-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-2"
             >
               <div className="flex min-h-[220px] items-center justify-center">
                 {filteredProcedures.length === 0 ? (
@@ -885,11 +912,13 @@ export default function HomePage() {
                       height: `${mapCanvasHeight}px`,
                       width: `${mapCanvasWidth}px`,
                       cursor: isDragging ? "grabbing" : "grab",
+                      touchAction: "none",
                       transition:
                         "width var(--motion-normal) var(--ease-out-strong), height var(--motion-normal) var(--ease-out-strong)"
                     }}
                     role="img"
                     aria-label={`Mapa de relaciones: ${activeMapLabel}`}
+                    aria-describedby="map-instructions"
                     onPointerDown={startPan}
                     onPointerMove={movePan}
                     onPointerUp={endPan}
@@ -982,9 +1011,11 @@ export default function HomePage() {
                       return (
                         <g
                           key={procedure.code}
+                          className="map-node"
                           role="button"
                           tabIndex={0}
                           aria-label={`${procedure.code} · ${procedure.name}`}
+                          aria-pressed={selected}
                           onClick={(event) => {
                             event.stopPropagation();
                             if (panRef.current.moved) return;
@@ -1105,6 +1136,7 @@ function RelationPath({
 
   return (
     <path
+      className="relation-path"
       d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
       fill="none"
       stroke={color}
