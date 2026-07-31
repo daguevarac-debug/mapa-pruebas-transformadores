@@ -208,11 +208,12 @@ const ProcedureNode = memo(function ProcedureNode({ data }: NodeProps) {
   const bw = d.isSelected ? 3 : 2;
   return (
     <>
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ opacity: 0, pointerEvents: "none" }}
-      />
+      <Handle type="target" id="top" position={Position.Top} style={{ opacity: 0, pointerEvents: "none" }} />
+      <Handle type="target" id="left" position={Position.Left} style={{ opacity: 0, pointerEvents: "none" }} />
+      <Handle type="target" id="right-in" position={Position.Right} style={{ opacity: 0, pointerEvents: "none" }} />
+      <Handle type="source" id="bottom" position={Position.Bottom} style={{ opacity: 0, pointerEvents: "none" }} />
+      <Handle type="source" id="right" position={Position.Right} style={{ opacity: 0, pointerEvents: "none" }} />
+      <Handle type="source" id="left-out" position={Position.Left} style={{ opacity: 0, pointerEvents: "none" }} />
       <div
         title={`${d.code} · ${d.name}`}
         style={{
@@ -239,11 +240,6 @@ const ProcedureNode = memo(function ProcedureNode({ data }: NodeProps) {
           {compactNodeName(d.name)}
         </p>
       </div>
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ opacity: 0, pointerEvents: "none" }}
-      />
     </>
   );
 });
@@ -500,10 +496,35 @@ export default function HomePage() {
       const isOutgoing = relation.from === selectedCode;
       const color = isShared ? "#7e22ce" : isOutgoing ? "#16a34a" : "#ea580c";
       const isInspected = relationKey(relation) === inspectedRelationKey;
+
+      // Choose handles based on relative position so same-row edges run
+      // horizontally and cross-row edges run vertically.
+      const fromPos = layout[relation.from];
+      const toPos = layout[relation.to];
+      let sourceHandle = "bottom";
+      let targetHandle = "top";
+      if (fromPos && toPos) {
+        const dx = toPos.x - fromPos.x;
+        const dy = toPos.y - fromPos.y;
+        if (Math.abs(dy) < NODE_HEIGHT) {
+          // Same row — route along the horizontal axis
+          if (dx >= 0) {
+            sourceHandle = "right";
+            targetHandle = "left";
+          } else {
+            sourceHandle = "left-out";
+            targetHandle = "right-in";
+          }
+        }
+        // |dy| ≥ NODE_HEIGHT: cross-row — keep bottom→top (default)
+      }
+
       return {
         id: relationKey(relation),
         source: relation.from,
         target: relation.to,
+        sourceHandle,
+        targetHandle,
         type: "smoothstep",
         style: {
           stroke: color,
