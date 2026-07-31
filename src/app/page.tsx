@@ -1,6 +1,16 @@
 "use client";
 
-import { Fragment, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Controls,
+  MarkerType,
+  MiniMap,
+  ReactFlow,
+  useReactFlow,
+  type Edge,
+  type Node,
+  type NodeProps,
+} from "@xyflow/react";
 import {
   documentedContexts,
   documentedSpecialConditions,
@@ -156,6 +166,130 @@ const glossaryPattern = new RegExp(
   "giu"
 );
 
+// ── React Flow custom node types ────────────────────────────────────────────
+
+type ProcedureNodeData = {
+  code: string;
+  name: string;
+  isSelected: boolean;
+  isOutgoing: boolean;
+  isIncoming: boolean;
+  isShared: boolean;
+};
+
+type FamilyAreaNodeData = {
+  label: string;
+  fill: string;
+  stroke: string;
+  areaWidth: number;
+  areaHeight: number;
+};
+
+const ProcedureNode = memo(function ProcedureNode({ data }: NodeProps) {
+  const d = data as unknown as ProcedureNodeData;
+  const borderColor = d.isSelected
+    ? "#0284c7"
+    : d.isOutgoing
+      ? "#16a34a"
+      : d.isIncoming
+        ? "#ea580c"
+        : d.isShared
+          ? "#7e22ce"
+          : "#94a3b8";
+  const bg = d.isSelected ? "#eff6ff" : "#ffffff";
+  const bw = d.isSelected ? 3 : 2;
+  return (
+    <div
+      title={`${d.code} · ${d.name}`}
+      style={{
+        width: NODE_WIDTH,
+        height: NODE_HEIGHT,
+        border: `${bw}px solid ${borderColor}`,
+        borderRadius: 12,
+        background: bg,
+        boxShadow: d.isSelected ? "0 0 0 4px #bae6fd" : undefined,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        userSelect: "none",
+        padding: "4px 6px",
+        boxSizing: "border-box",
+      }}
+    >
+      <p style={{ fontSize: 10, fontWeight: 700, color: "#0f172a", margin: 0, lineHeight: 1.2, textAlign: "center" }}>
+        {d.code}
+      </p>
+      <p style={{ fontSize: 8, color: "#334155", margin: 0, textAlign: "center", lineHeight: 1.2 }}>
+        {compactNodeName(d.name)}
+      </p>
+    </div>
+  );
+});
+
+const FamilyAreaNode = memo(function FamilyAreaNode({ data }: NodeProps) {
+  const d = data as unknown as FamilyAreaNodeData;
+  return (
+    <div
+      style={{
+        width: d.areaWidth,
+        height: d.areaHeight,
+        background: d.fill,
+        border: `2px solid ${d.stroke}`,
+        borderRadius: 18,
+        pointerEvents: "none",
+        padding: "8px 20px",
+        boxSizing: "border-box",
+      }}
+    >
+      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#475569", lineHeight: 1.2 }}>
+        {d.label}
+      </p>
+    </div>
+  );
+});
+
+const nodeTypes = { procedure: ProcedureNode, familyArea: FamilyAreaNode };
+
+// ── MapController: triggers fitView inside the ReactFlow context ─────────────
+
+function MapController({
+  frameMode,
+  selectedClusterCodes,
+  filteredCodes,
+}: {
+  frameMode: MapFrameMode;
+  selectedClusterCodes: string[];
+  filteredCodes: string[];
+}) {
+  const { fitView } = useReactFlow();
+  const isFirst = useRef(true);
+
+  useEffect(() => {
+    if (isFirst.current) {
+      isFirst.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (frameMode === "full") {
+        fitView({ duration: 500, padding: 0.08 });
+      } else if (frameMode === "filtered") {
+        const nodes = filteredCodes.map((id) => ({ id }));
+        if (nodes.length > 0) fitView({ nodes, duration: 500, padding: 0.08 });
+        else fitView({ duration: 500, padding: 0.08 });
+      } else if (frameMode === "selection" && selectedClusterCodes.length > 0) {
+        fitView({ nodes: selectedClusterCodes.map((id) => ({ id })), duration: 500, padding: 0.2 });
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [frameMode, filteredCodes, selectedClusterCodes, fitView]);
+
+  return null;
+}
+
+// ── HomePage ─────────────────────────────────────────────────────────────────
+
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("explore");
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
@@ -167,22 +301,10 @@ export default function HomePage() {
   const [showDirectional, setShowDirectional] = useState(true);
   const [showComplementary, setShowComplementary] = useState(true);
   const [mapFrameMode, setMapFrameMode] = useState<MapFrameMode>("filtered");
-  const [mapZoom, setMapZoom] = useState(1);
   const [inspectedRelationKey, setInspectedRelationKey] = useState<string | null>(null);
   const [comparisonCodes, setComparisonCodes] = useState<[string, string]>(["", ""]);
   const [activeGlossaryTerm, setActiveGlossaryTerm] = useState<GlossaryTerm | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [announcement, setAnnouncement] = useState("Mapa listo para explorar.");
-
-  const mapViewportRef = useRef<HTMLDivElement>(null);
-  const panRef = useRef({
-    pointerId: -1,
-    startX: 0,
-    startY: 0,
-    scrollLeft: 0,
-    scrollTop: 0,
-    moved: false
-  });
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get("prueba");
@@ -243,31 +365,6 @@ export default function HomePage() {
       ),
     [filteredProcedures]
   );
-
-  const mapBounds = useMemo(() => {
-    if (activeFilterCount === 0 || visibleFamilyAreas.length === familyAreas.length) {
-      return fullMapBounds;
-    }
-    if (visibleFamilyAreas.length === 0) {
-      return fullMapBounds;
-    }
-
-    const padding = 18;
-    const minX = Math.min(...visibleFamilyAreas.map((area) => area.x));
-    const minY = Math.min(...visibleFamilyAreas.map((area) => area.y));
-    const maxX = Math.max(...visibleFamilyAreas.map((area) => area.x + area.width));
-    const maxY = Math.max(...visibleFamilyAreas.map((area) => area.y + area.height));
-
-    const x = Math.max(0, minX - padding);
-    const y = Math.max(0, minY - padding);
-
-    return {
-      x,
-      y,
-      width: Math.min(fullMapBounds.width - x, maxX - minX + padding * 2),
-      height: Math.min(fullMapBounds.height - y, maxY - minY + padding * 2)
-    };
-  }, [activeFilterCount, visibleFamilyAreas]);
 
   const selectedProcedure = selectedCode
     ? procedures.find((procedure) => procedure.code === selectedCode) ?? null
@@ -336,33 +433,6 @@ export default function HomePage() {
     return [...cluster];
   }, [incomingCodes, outgoingCodes, selectedCode, sharedCodes]);
 
-  const selectedClusterBounds = useMemo(() => {
-    if (selectedClusterCodes.length === 0) return mapBounds;
-
-    const points = selectedClusterCodes
-      .map((code) => layout[code])
-      .filter((point): point is { x: number; y: number } => Boolean(point));
-
-    if (points.length === 0) return mapBounds;
-
-    const paddingX = 170;
-    const paddingY = 120;
-    const minX = Math.min(...points.map((point) => point.x - NODE_WIDTH / 2 - paddingX));
-    const minY = Math.min(...points.map((point) => point.y - NODE_HEIGHT / 2 - paddingY));
-    const maxX = Math.max(...points.map((point) => point.x + NODE_WIDTH / 2 + paddingX));
-    const maxY = Math.max(...points.map((point) => point.y + NODE_HEIGHT / 2 + paddingY));
-
-    const x = clamp(minX, 0, fullMapBounds.width - 320);
-    const y = clamp(minY, 0, fullMapBounds.height - 220);
-
-    return {
-      x,
-      y,
-      width: clamp(maxX - x, 320, fullMapBounds.width - x),
-      height: clamp(maxY - y, 220, fullMapBounds.height - y)
-    };
-  }, [mapBounds, selectedClusterCodes]);
-
   const activeMapLabel =
     families.length === 1
       ? families[0]
@@ -370,19 +440,81 @@ export default function HomePage() {
         ? `${filteredProcedures.length} pruebas filtradas`
         : "Vista completa";
 
-  const effectiveMapBounds = useMemo(() => {
-    if (mapFrameMode === "full") return fullMapBounds;
-    if (mapFrameMode === "selection" && selectedClusterCodes.length > 0) return selectedClusterBounds;
-    return mapBounds;
-  }, [mapBounds, mapFrameMode, selectedClusterBounds, selectedClusterCodes.length]);
-
-  const mapCanvasWidth = Math.round(
-    Math.min(fullMapBounds.width, Math.max(effectiveMapBounds.width * 1.62, 480)) * mapZoom
+  const filteredCodes = useMemo(
+    () => filteredProcedures.map((p) => p.code),
+    [filteredProcedures]
   );
 
-  const mapCanvasHeight = Math.round(
-    mapCanvasWidth * (effectiveMapBounds.height / effectiveMapBounds.width)
-  );
+  // React Flow nodes
+  const rfNodes: Node[] = useMemo(() => {
+    const familyAreaNodes: Node[] = visibleFamilyAreas.map((area) => ({
+      id: `family-${area.family}`,
+      type: "familyArea",
+      position: { x: area.x, y: area.y },
+      data: {
+        label: area.label,
+        fill: area.fill,
+        stroke: area.stroke,
+        areaWidth: area.width,
+        areaHeight: area.height,
+      } as unknown as Record<string, unknown>,
+      width: area.width,
+      height: area.height,
+      draggable: false,
+      selectable: false,
+      focusable: false,
+      zIndex: -1,
+    }));
+
+    const procedureNodes: Node[] = filteredProcedures.map((procedure) => {
+      const pos = layout[procedure.code];
+      return {
+        id: procedure.code,
+        type: "procedure",
+        position: { x: pos.x - NODE_WIDTH / 2, y: pos.y - NODE_HEIGHT / 2 },
+        data: {
+          code: procedure.code,
+          name: procedure.name,
+          isSelected: selectedCode === procedure.code,
+          isOutgoing: outgoingCodes.has(procedure.code),
+          isIncoming: incomingCodes.has(procedure.code),
+          isShared: sharedCodes.has(procedure.code),
+        } as unknown as Record<string, unknown>,
+        width: NODE_WIDTH,
+        height: NODE_HEIGHT,
+        draggable: false,
+        selectable: false,
+      };
+    });
+
+    return [...familyAreaNodes, ...procedureNodes];
+  }, [filteredProcedures, visibleFamilyAreas, selectedCode, outgoingCodes, incomingCodes, sharedCodes]);
+
+  // React Flow edges (only for selected procedure's relations)
+  const rfEdges: Edge[] = useMemo(() => {
+    return visibleRelations.map((relation) => {
+      const isShared = relation.type === "shared_setup";
+      const isOutgoing = relation.from === selectedCode;
+      const color = isShared ? "#7e22ce" : isOutgoing ? "#16a34a" : "#ea580c";
+      const isInspected = relationKey(relation) === inspectedRelationKey;
+      return {
+        id: relationKey(relation),
+        source: relation.from,
+        target: relation.to,
+        type: "smoothstep",
+        style: {
+          stroke: color,
+          strokeWidth: isInspected ? 6 : 2.5,
+          strokeDasharray: isShared ? "6 4" : undefined,
+        },
+        markerEnd: isShared
+          ? undefined
+          : { type: MarkerType.ArrowClosed, color, width: 14, height: 14 },
+        focusable: true,
+        data: { relation } as unknown as Record<string, unknown>,
+      };
+    });
+  }, [visibleRelations, selectedCode, inspectedRelationKey]);
 
   const activeFilterChips = useMemo(() => {
     const chips: Array<{ key: string; label: string; clear: () => void }> = [];
@@ -416,19 +548,8 @@ export default function HomePage() {
     return chips;
   }, [contexts, families, query]);
 
-  const resetMapViewport = () => {
-    requestAnimationFrame(() => {
-      if (mapViewportRef.current) {
-        mapViewportRef.current.scrollLeft = 0;
-        mapViewportRef.current.scrollTop = 0;
-      }
-    });
-  };
-
   const applyMapFrame = (mode: MapFrameMode) => {
     setMapFrameMode(mode);
-    setMapZoom(1);
-    resetMapViewport();
   };
 
   const selectProcedure = (code: string | null) => {
@@ -468,52 +589,23 @@ export default function HomePage() {
     setMapFrameMode("full");
   };
 
-  const zoomIn = () => setMapZoom((current) => Math.min(1.6, Number((current + 0.2).toFixed(1))));
-  const zoomOut = () => setMapZoom((current) => Math.max(0.6, Number((current - 0.2).toFixed(1))));
-  const fitMap = () => {
-    setMapZoom(1);
-    resetMapViewport();
-  };
+  const handleNodeClick = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      if (node.type === "familyArea") return;
+      selectProcedure(node.id);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedCode]
+  );
 
-  const startPan = (event: PointerEvent<SVGSVGElement>) => {
-    if (!mapViewportRef.current || event.target !== event.currentTarget) return;
-    setIsDragging(true);
-    panRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      scrollLeft: mapViewportRef.current.scrollLeft,
-      scrollTop: mapViewportRef.current.scrollTop,
-      moved: false
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const movePan = (event: PointerEvent<SVGSVGElement>) => {
-    const viewport = mapViewportRef.current;
-    const pan = panRef.current;
-    if (!viewport || pan.pointerId !== event.pointerId) return;
-    const dx = event.clientX - pan.startX;
-    const dy = event.clientY - pan.startY;
-    if (Math.abs(dx) + Math.abs(dy) > 4) pan.moved = true;
-    viewport.scrollLeft = pan.scrollLeft - dx;
-    viewport.scrollTop = pan.scrollTop - dy;
-  };
-
-  const endPan = (event: PointerEvent<SVGSVGElement>) => {
-    if (panRef.current.pointerId === event.pointerId) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-      setIsDragging(false);
-    }
-  };
-
-  const clearMapSelection = () => {
-    if (panRef.current.moved) {
-      panRef.current.moved = false;
-      return;
-    }
+  const handlePaneClick = useCallback(() => {
     selectProcedure(null);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
+    setInspectedRelationKey(edge.id);
+  }, []);
 
   return (
     <main className="study-shell mx-auto flex min-h-[100dvh] w-full max-w-[1320px] flex-col px-4 py-6 md:px-8 md:py-8">
@@ -766,41 +858,7 @@ export default function HomePage() {
               </div>
 
               <div className="w-full space-y-2 sm:w-auto">
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
-                  <div
-                    className="col-span-2 inline-flex overflow-hidden rounded-full border border-slate-300 bg-white shadow-sm sm:col-span-1"
-                    aria-label="Controles del mapa"
-                  >
-                    <button
-                      type="button"
-                      onClick={zoomOut}
-                      disabled={mapZoom <= 0.6}
-                      className="min-h-11 min-w-11 px-3 text-base font-semibold text-slate-700 transition-[background-color,transform] duration-200 ease-out hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:text-slate-300"
-                      aria-label="Alejar mapa"
-                    >
-                      −
-                    </button>
-                    <button
-                      type="button"
-                      onClick={fitMap}
-                      className="min-h-11 min-w-[72px] border-x border-slate-200 px-2 text-sm font-medium text-slate-700 transition-[background-color,transform] duration-200 ease-out hover:bg-slate-50 active:scale-[0.98]"
-                      aria-label={
-                        activeFilterCount ? "Encuadrar resultados filtrados" : "Encuadrar todo el mapa"
-                      }
-                    >
-                      {Math.round(mapZoom * 100)}%
-                    </button>
-                    <button
-                      type="button"
-                      onClick={zoomIn}
-                      disabled={mapZoom >= 1.6}
-                      className="min-h-11 min-w-11 px-3 text-base font-semibold text-slate-700 transition-[background-color,transform] duration-200 ease-out hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:text-slate-300"
-                      aria-label="Acercar mapa"
-                    >
-                      +
-                    </button>
-                  </div>
-
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
                   <button
                     type="button"
                     onClick={() => setShowDirectional((value) => !value)}
@@ -871,9 +929,7 @@ export default function HomePage() {
 
             <div className="mt-3 rounded-xl border border-slate-200/90 bg-white/80 p-3 text-sm text-slate-700">
               <p id="map-instructions" className="leading-6">
-                Pulsa una tarjeta para ver la ficha y sus relaciones. Arrastra el espacio vacío para
-                recorrer el mapa; también puedes usar Tab y Enter o Espacio sobre cada tarjeta. Un clic
-                vacío deselecciona la prueba.
+                Rueda del ratón o botones +/− para zoom; clic sostenido para arrastrar; clic en nodo para ver ficha.
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
                 <span className="inline-flex items-center gap-1 text-emerald-800">
@@ -893,189 +949,67 @@ export default function HomePage() {
               <RelationTrace relation={inspectedRelation} onClose={() => setInspectedRelationKey(null)} />
             )}
 
+            {/* React Flow map canvas — fixed height so the page never grows with zoom */}
             <div
               role="region"
               aria-label="Lienzo del mapa de relaciones"
-              ref={mapViewportRef}
-              className="map-viewport mt-4 overflow-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-2"
+              className="map-viewport mt-4 h-[480px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70"
             >
-              <div className="flex min-h-[220px] items-center justify-center">
-                {filteredProcedures.length === 0 ? (
+              {filteredProcedures.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
                   <p className="rounded-xl border border-dashed border-slate-300 bg-white px-5 py-4 text-center text-sm text-slate-600">
                     No hay pruebas para encuadrar con los filtros actuales.
                   </p>
-                ) : (
-                  <svg
-                    viewBox={`${effectiveMapBounds.x} ${effectiveMapBounds.y} ${effectiveMapBounds.width} ${effectiveMapBounds.height}`}
-                    className="block select-none"
-                    style={{
-                      height: `${mapCanvasHeight}px`,
-                      width: `${mapCanvasWidth}px`,
-                      cursor: isDragging ? "grabbing" : "grab",
-                      touchAction: "none",
-                      transition:
-                        "width var(--motion-normal) var(--ease-out-strong), height var(--motion-normal) var(--ease-out-strong)"
-                    }}
-                    role="img"
-                    aria-label={`Mapa de relaciones: ${activeMapLabel}`}
-                    aria-describedby="map-instructions"
-                    onPointerDown={startPan}
-                    onPointerMove={movePan}
-                    onPointerUp={endPan}
-                    onPointerCancel={endPan}
-                    onClick={clearMapSelection}
-                  >
-                    <defs>
-                      <marker
-                        id="arrow-green"
-                        viewBox="0 0 10 10"
-                        refX="9"
-                        refY="5"
-                        markerWidth="7"
-                        markerHeight="7"
-                        orient="auto"
-                      >
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a" />
-                      </marker>
-                      <marker
-                        id="arrow-orange"
-                        viewBox="0 0 10 10"
-                        refX="9"
-                        refY="5"
-                        markerWidth="7"
-                        markerHeight="7"
-                        orient="auto"
-                      >
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#ea580c" />
-                      </marker>
-                    </defs>
-
-                    <g pointerEvents="none">
-                      {visibleFamilyAreas.map((area) => (
-                        <g key={area.label}>
-                          <rect
-                            x={area.x}
-                            y={area.y}
-                            width={area.width}
-                            height={area.height}
-                            rx="18"
-                            fill={area.fill}
-                            stroke={area.stroke}
-                          />
-                          <text
-                            x={area.x + 20}
-                            y={area.y + 27}
-                            fill="#475569"
-                            fontSize="14"
-                            fontWeight="700"
-                          >
-                            {area.label}
-                          </text>
-                        </g>
-                      ))}
-                    </g>
-
-                    {visibleRelations.map((relation, relationIndex) => (
-                      <RelationPath
-                        key={relationKey(relation)}
-                        relation={relation}
-                        relationIndex={relationIndex}
-                        relationCount={visibleRelations.length}
-                        selectedCode={selectedCode}
-                        inspected={relationKey(relation) === inspectedRelationKey}
-                        onInspect={setInspectedRelationKey}
-                      />
-                    ))}
-
-                    {procedures.map((procedure) => {
-                      if (!visibleCodes.has(procedure.code)) return null;
-
-                      const point = layout[procedure.code];
-                      if (!point) return null;
-
-                      const selected = selectedCode === procedure.code;
-                      const outgoing = outgoingCodes.has(procedure.code);
-                      const incoming = incomingCodes.has(procedure.code);
-                      const shared = sharedCodes.has(procedure.code);
-                      const stroke = selected
+                </div>
+              ) : (
+                <ReactFlow
+                  nodes={rfNodes}
+                  edges={rfEdges}
+                  nodeTypes={nodeTypes}
+                  onNodeClick={handleNodeClick}
+                  onPaneClick={handlePaneClick}
+                  onEdgeClick={handleEdgeClick}
+                  nodesDraggable={false}
+                  nodesConnectable={false}
+                  elementsSelectable={false}
+                  fitView
+                  fitViewOptions={{ padding: 0.08, duration: 0 }}
+                  minZoom={0.2}
+                  maxZoom={4}
+                  proOptions={{ hideAttribution: true }}
+                  aria-label={`Mapa de relaciones: ${activeMapLabel}`}
+                  aria-describedby="map-instructions"
+                >
+                  <Controls
+                    aria-label="Controles de zoom del mapa"
+                    showInteractive={false}
+                    style={{ bottom: 8, left: 8, top: "auto" }}
+                  />
+                  <MiniMap
+                    nodeColor={(node) => {
+                      if (node.type === "familyArea") return "transparent";
+                      const d = node.data as unknown as ProcedureNodeData;
+                      return d.isSelected
                         ? "#0284c7"
-                        : outgoing
+                        : d.isOutgoing
                           ? "#16a34a"
-                          : incoming
+                          : d.isIncoming
                             ? "#ea580c"
-                            : shared
+                            : d.isShared
                               ? "#7e22ce"
                               : "#94a3b8";
-                      const fill = selected ? "#eff6ff" : "#ffffff";
-
-                      return (
-                        <g
-                          key={procedure.code}
-                          className="map-node"
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`${procedure.code} · ${procedure.name}`}
-                          aria-pressed={selected}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            if (panRef.current.moved) return;
-                            selectProcedure(procedure.code);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              selectProcedure(procedure.code);
-                            }
-                          }}
-                        >
-                          {selected && (
-                            <rect
-                              x={point.x - NODE_WIDTH / 2 - 6}
-                              y={point.y - NODE_HEIGHT / 2 - 6}
-                              width={NODE_WIDTH + 12}
-                              height={NODE_HEIGHT + 12}
-                              rx="16"
-                              fill="none"
-                              stroke="#bae6fd"
-                              strokeWidth="4"
-                            />
-                          )}
-                          <rect
-                            x={point.x - NODE_WIDTH / 2}
-                            y={point.y - NODE_HEIGHT / 2}
-                            width={NODE_WIDTH}
-                            height={NODE_HEIGHT}
-                            rx="12"
-                            fill={fill}
-                            stroke={stroke}
-                            strokeWidth={selected ? "3.2" : "2"}
-                          />
-                          <title>{`${procedure.code} · ${procedure.name}`}</title>
-                          <text
-                            x={point.x}
-                            y={point.y - 5}
-                            textAnchor="middle"
-                            fontSize="10"
-                            fontWeight="700"
-                            fill="#0f172a"
-                          >
-                            {procedure.code}
-                          </text>
-                          <text
-                            x={point.x}
-                            y={point.y + 10}
-                            textAnchor="middle"
-                            fontSize="8"
-                            fill="#334155"
-                          >
-                            {compactNodeName(procedure.name)}
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </svg>
-                )}
-              </div>
+                    }}
+                    zoomable
+                    pannable
+                    style={{ bottom: 8, right: 8, top: "auto" }}
+                  />
+                  <MapController
+                    frameMode={mapFrameMode}
+                    selectedClusterCodes={selectedClusterCodes}
+                    filteredCodes={filteredCodes}
+                  />
+                </ReactFlow>
+              )}
             </div>
           </div>
 
@@ -1092,75 +1026,6 @@ export default function HomePage() {
 
       <ComparisonPanel codes={comparisonCodes} onChange={setComparisonCodes} />
     </main>
-  );
-}
-
-function RelationPath({
-  relation,
-  relationIndex,
-  relationCount,
-  selectedCode,
-  inspected,
-  onInspect
-}: {
-  relation: ProcedureRelation;
-  relationIndex: number;
-  relationCount: number;
-  selectedCode: string | null;
-  inspected: boolean;
-  onInspect: (key: string) => void;
-}) {
-  const source = layout[relation.from];
-  const target = layout[relation.to];
-  if (!source || !target) return null;
-
-  const outgoing = relation.from === selectedCode;
-  const shared = relation.type === "shared_setup";
-  const color = shared ? "#7e22ce" : outgoing ? "#16a34a" : "#ea580c";
-
-  const dx = target.x - source.x;
-  const dy = target.y - source.y;
-  const distance = Math.hypot(dx, dy) || 1;
-  const ux = dx / distance;
-  const uy = dy / distance;
-
-  const startX = source.x + ux * 46;
-  const startY = source.y + uy * 30;
-  const endX = target.x - ux * 48;
-  const endY = target.y - uy * 30;
-
-  const lane = relationIndex - (relationCount - 1) / 2;
-  const bend = lane * 44;
-  const controlX = (startX + endX) / 2 - uy * bend;
-  const controlY = (startY + endY) / 2 + ux * bend;
-
-  return (
-    <path
-      className="relation-path"
-      d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
-      fill="none"
-      stroke={color}
-      strokeWidth={inspected ? "6.5" : "3.5"}
-      strokeOpacity={inspected ? "0.88" : "1"}
-      strokeDasharray={shared ? "4 7" : undefined}
-      strokeLinecap="round"
-      markerEnd={shared ? undefined : outgoing ? "url(#arrow-green)" : "url(#arrow-orange)"}
-      style={{ transition: "stroke-width var(--motion-fast) var(--ease-out-strong)", pointerEvents: "stroke" }}
-      tabIndex={0}
-      role="button"
-      aria-label={`Ver trazabilidad de la relación ${relation.from} ${shared ? "con" : "hacia"} ${relation.to}`}
-      onClick={(event) => {
-        event.stopPropagation();
-        onInspect(relationKey(relation));
-      }}
-      onMouseEnter={() => onInspect(relationKey(relation))}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onInspect(relationKey(relation));
-        }
-      }}
-    />
   );
 }
 
