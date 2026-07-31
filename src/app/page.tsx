@@ -3,8 +3,10 @@
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Controls,
+  Handle,
   MarkerType,
   MiniMap,
+  Position,
   ReactFlow,
   useReactFlow,
   type Edge,
@@ -205,32 +207,44 @@ const ProcedureNode = memo(function ProcedureNode({ data }: NodeProps) {
   const bg = d.isSelected ? "#eff6ff" : "#ffffff";
   const bw = d.isSelected ? 3 : 2;
   return (
-    <div
-      title={`${d.code} · ${d.name}`}
-      style={{
-        width: NODE_WIDTH,
-        height: NODE_HEIGHT,
-        border: `${bw}px solid ${borderColor}`,
-        borderRadius: 12,
-        background: bg,
-        boxShadow: d.isSelected ? "0 0 0 4px #bae6fd" : undefined,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        userSelect: "none",
-        padding: "4px 6px",
-        boxSizing: "border-box",
-      }}
-    >
-      <p style={{ fontSize: 10, fontWeight: 700, color: "#0f172a", margin: 0, lineHeight: 1.2, textAlign: "center" }}>
-        {d.code}
-      </p>
-      <p style={{ fontSize: 8, color: "#334155", margin: 0, textAlign: "center", lineHeight: 1.2 }}>
-        {compactNodeName(d.name)}
-      </p>
-    </div>
+    <>
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ opacity: 0, pointerEvents: "none" }}
+      />
+      <div
+        title={`${d.code} · ${d.name}`}
+        style={{
+          width: NODE_WIDTH,
+          height: NODE_HEIGHT,
+          border: `${bw}px solid ${borderColor}`,
+          borderRadius: 12,
+          background: bg,
+          boxShadow: d.isSelected ? "0 0 0 4px #bae6fd" : undefined,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          userSelect: "none",
+          padding: "4px 6px",
+          boxSizing: "border-box",
+        }}
+      >
+        <p style={{ fontSize: 10, fontWeight: 700, color: "#0f172a", margin: 0, lineHeight: 1.2, textAlign: "center" }}>
+          {d.code}
+        </p>
+        <p style={{ fontSize: 8, color: "#334155", margin: 0, textAlign: "center", lineHeight: 1.2 }}>
+          {compactNodeName(d.name)}
+        </p>
+      </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ opacity: 0, pointerEvents: "none" }}
+      />
+    </>
   );
 });
 
