@@ -140,7 +140,7 @@ function relationKey(relation: ProcedureRelation) {
 }
 
 function procedureName(code: string) {
-  const procedure = procedures.find((item) => item.code === code);
+  const procedure = procedureByCode.get(code);
   return procedure ? `${procedure.code} · ${procedure.name}` : code;
 }
 
@@ -165,6 +165,12 @@ const glossaryPattern = new RegExp(
   `((?<![\\p{L}\\p{N}])(?:${glossaryMatches.map(({ alias }) => escapeRegExp(alias)).join("|")})(?![\\p{L}\\p{N}]))`,
   "giu"
 );
+
+// ── Module-level index Maps ──────────────────────────────────────────────────
+// Constructed once at module load; enable O(1) lookups throughout the component tree.
+const procedureByCode = new Map(procedures.map((p) => [p.code, p]));
+const relationByKey = new Map(verifiedRelations.map((r) => [relationKey(r), r]));
+const contextCodeSets = new Map(documentedContexts.map((c) => [c.id, new Set(c.codes)]));
 
 // ── React Flow custom node types ────────────────────────────────────────────
 
@@ -344,9 +350,7 @@ export default function HomePage() {
         (!normalized || searchable.includes(normalized)) &&
         (families.length === 0 || families.includes(procedureFamilies[procedure.code])) &&
         (contexts.length === 0 ||
-          contexts.every((contextId) =>
-            documentedContexts.find((context) => context.id === contextId)?.codes.includes(procedure.code)
-          ))
+          contexts.every((contextId) => contextCodeSets.get(contextId)?.has(procedure.code)))
       );
     });
   }, [contexts, families, query]);
@@ -367,7 +371,7 @@ export default function HomePage() {
   );
 
   const selectedProcedure = selectedCode
-    ? procedures.find((procedure) => procedure.code === selectedCode) ?? null
+    ? (procedureByCode.get(selectedCode) ?? null)
     : null;
 
   const selectedRelations = useMemo(
@@ -389,40 +393,25 @@ export default function HomePage() {
     [selectedRelations, showComplementary, showDirectional, visibleCodes]
   );
 
-  const inspectedRelation = useMemo(
-    () => verifiedRelations.find((relation) => relationKey(relation) === inspectedRelationKey) ?? null,
-    [inspectedRelationKey]
-  );
+  const inspectedRelation = inspectedRelationKey
+    ? (relationByKey.get(inspectedRelationKey) ?? null)
+    : null;
 
-  const outgoingCodes = useMemo(
-    () =>
-      new Set(
-        selectedRelations
-          .filter((relation) => relation.type !== "shared_setup" && relation.from === selectedCode)
-          .map((relation) => relation.to)
-      ),
-    [selectedCode, selectedRelations]
-  );
-
-  const incomingCodes = useMemo(
-    () =>
-      new Set(
-        selectedRelations
-          .filter((relation) => relation.type !== "shared_setup" && relation.to === selectedCode)
-          .map((relation) => relation.from)
-      ),
-    [selectedCode, selectedRelations]
-  );
-
-  const sharedCodes = useMemo(
-    () =>
-      new Set(
-        selectedRelations
-          .filter((relation) => relation.type === "shared_setup")
-          .map((relation) => (relation.from === selectedCode ? relation.to : relation.from))
-      ),
-    [selectedCode, selectedRelations]
-  );
+  const { outgoingCodes, incomingCodes, sharedCodes } = useMemo(() => {
+    const outgoing = new Set<string>();
+    const incoming = new Set<string>();
+    const shared = new Set<string>();
+    for (const relation of selectedRelations) {
+      if (relation.type === "shared_setup") {
+        shared.add(relation.from === selectedCode ? relation.to : relation.from);
+      } else if (relation.from === selectedCode) {
+        outgoing.add(relation.to);
+      } else {
+        incoming.add(relation.from);
+      }
+    }
+    return { outgoingCodes: outgoing, incomingCodes: incoming, sharedCodes: shared };
+  }, [selectedCode, selectedRelations]);
 
   const selectedClusterCodes = useMemo(() => {
     if (!selectedCode) return [];
@@ -552,7 +541,7 @@ export default function HomePage() {
     setMapFrameMode(mode);
   };
 
-  const selectProcedure = (code: string | null) => {
+  const selectProcedure = useCallback((code: string | null) => {
     setSelectedCode(code);
     setInspectedRelationKey(null);
     setActiveGlossaryTerm(null);
@@ -562,7 +551,7 @@ export default function HomePage() {
         ? `Prueba seleccionada: ${procedureName(code)}.`
         : "Selección de prueba borrada."
     );
-  };
+  }, []);
 
   const toggleFamily = (family: string) => {
     setFamilies((current) =>
@@ -594,14 +583,12 @@ export default function HomePage() {
       if (node.type === "familyArea") return;
       selectProcedure(node.id);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedCode]
+    [selectProcedure]
   );
 
   const handlePaneClick = useCallback(() => {
     selectProcedure(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectProcedure]);
 
   const handleEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
     setInspectedRelationKey(edge.id);
@@ -1287,7 +1274,7 @@ function ComparisonPanel({
   }, [codes]);
 
   const comparison = codes.map(
-    (code) => procedures.find((procedure) => procedure.code === code) ?? null
+    (code) => (code ? procedureByCode.get(code) ?? null : null)
   ) as [Procedure | null, Procedure | null];
 
   return (
